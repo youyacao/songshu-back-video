@@ -8,7 +8,10 @@
 // +----------------------------------------------------------------------
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
+// 给User控制器设置快捷路由
+use think\Route;
 
+Route::controller('video','api/video');
 return [
     '__pattern__' => [
         'name' => '\w+',
@@ -17,6 +20,5 @@ return [
         ':id'   => ['index/hello', ['method' => 'get'], ['id' => '\d+']],
         ':name' => ['index/hello', ['method' => 'post']],
     ],
-    'api'=>'api/api'
 
 ];
