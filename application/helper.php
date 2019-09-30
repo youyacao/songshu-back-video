@@ -233,3 +233,69 @@ function delDir($dir)
         return false;
     }
 }
+
+function getImg($url)
+{
+    /**
+     * TODO 通过视频地址截取视频片段
+     */
+    $cmd = "ffmpeg -i ".str_replace("&","",$url)." -ss 00:00:00 -t 1 uploads/img/".md5($url).".png -y";
+    shell_exec($cmd);
+    return md5($url).".png";
+}
+
+function get_current_url()
+{
+    $current_url = 'http://';
+    if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') {
+        $current_url = 'https://';
+    }
+    if ($_SERVER['SERVER_PORT'] != '80') {
+        $current_url .= $_SERVER['SERVER_NAME'] . ':' . $_SERVER['SERVER_PORT'] . $_SERVER['REQUEST_URI'];
+    } else {
+        $current_url .= $_SERVER['SERVER_NAME'] . $_SERVER['REQUEST_URI'];
+    }
+    return $current_url;
+}
+
+/**
+ * 函数名称: getUA
+ * 函数功能: 取UA
+ * 输入参数: none
+ * 函数返回值: 成功返回号码，失败返回false
+ * 其它说明: 说明
+ */
+function getUA()
+{
+    if (isset($_SERVER['HTTP_USER_AGENT'])) {
+        return $_SERVER['HTTP_USER_AGENT'];
+    } else {
+        return false;
+    }
+}
+
+/**
+ * 用户日志
+ * @param string $msg
+ * @param string $type
+ */
+function u_log($msg = "", $type = "info")
+{
+    $user = session("user");
+    if (!$user) {
+        $id = "-1";
+    } else {
+        $id = $user['id'];
+    }
+
+    $data = [
+        "uid" => $id,
+        "type" => $type,
+        "action" => $msg,
+        "time" => date("Y-m-d H:i:s", time()),
+        "ip" => getIp(),
+        "ua" => getUA(),
+        "path" => get_current_url()
+    ];
+    Db("user_log")->insert($data);
+}
