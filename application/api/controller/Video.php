@@ -39,10 +39,12 @@ class Video
             $list = Db("video v")
                 ->whereNotIn("v.id",$ids)
                 ->join("skr s", "v.id=s.vid and v.uid=s.uid", "left")
+                ->join("skr s1", "v.id=s.vid", "left")
                 ->join("user u", "v.uid=u.id", "left")
+                ->join("comment c", "v.id=c.vid", "left")
                 ->order("v.create_time")
                 ->limit(10)
-                ->field("v.id,v.title,v.url,v.img,v.create_time,v.uid,u.name,ifnull(u.head_img,'static/image/head.png') head_img,ifnull(s.skr,'0') skr")
+                ->field("v.id,v.title,v.url,v.img,v.create_time,v.uid,u.name,ifnull(u.head_img,'static/image/head.png') head_img,count(s1.id) skr_count,ifnull(s.skr,'0') skr,count(c.id) comment_count")
                 ->select();
             return $list;
         }
