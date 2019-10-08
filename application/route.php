@@ -12,8 +12,14 @@
 use think\Route;
 
 Route::controller('video','api/video');
+
 Route::controller('type','api/type');
+
 Route::controller('user','api/user');
+
+Route::controller('comment','api/comment');
+
+
 Route::controller('captcha','index/index/captcha');
 return [
     '__pattern__' => [

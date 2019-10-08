@@ -9,9 +9,12 @@ use think\Controller;
 class User extends Controller
 {
     /**
-     * 登录
+     * Notes: 登录
      *  1.用户名或密码登录
      *  2.手机验证码登录
+     * User: BigNiu
+     * Date: 2019/10/8
+     * Time: 15:58
      * @return \think\response\Json
      * @throws \think\db\exception\DataNotFoundException
      * @throws \think\db\exception\ModelNotFoundException
@@ -70,11 +73,12 @@ class User extends Controller
         }
         return error("登录失败");
     }
+    //TODO 更新用户资料
     public function postUpdate(){
         $username = input("username");
         $head_img = input("head_img");
         $mail = input("head_img");
         $qq = input("qq");
-
+        
     }
 }

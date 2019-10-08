@@ -6,15 +6,22 @@ namespace app\api\controller;
 
 use think\Cache;
 use think\Controller;
+use think\db\exception\DataNotFoundException;
+use think\db\exception\ModelNotFoundException;
+use think\exception\DbException;
+use think\response\Json;
 
 class Type extends Controller
 {
     /**
-     * 获取分类列表
-     * @return \think\response\Json
-     * @throws \think\db\exception\DataNotFoundException
-     * @throws \think\db\exception\ModelNotFoundException
-     * @throws \think\exception\DbException
+     * Notes: 获取分类列表
+     * User: BigNiu
+     * Date: 2019/10/8
+     * Time: 16:04
+     * @return Json
+     * @throws DataNotFoundException
+     * @throws ModelNotFoundException
+     * @throws DbException
      */
     public function getType(){
         if($type1=Cache::get("type"))
@@ -31,6 +38,13 @@ class Type extends Controller
         return success("成功",$type1,300);
     }
 
+    /**
+     * Notes:添加分类
+     * User: BigNiu
+     * Date: 2019/10/8
+     * Time: 16:05
+     * @return Json
+     */
     public function postType(){
         $name = input("name");
         $icon = input("icon");

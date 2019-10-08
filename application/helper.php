@@ -241,7 +241,7 @@ function getImg($url)
      */
     $cmd = "ffmpeg -i ".str_replace("&","",$url)." -ss 00:00:00 -t 1 uploads/img/".md5($url).".png -y";
     shell_exec($cmd);
-    return md5($url).".png";
+    return "uploads/img/".md5($url).".png";
 }
 
 function get_current_url()
@@ -295,7 +295,9 @@ function u_log($msg = "", $type = "info")
         "time" => date("Y-m-d H:i:s", time()),
         "ip" => getIp(),
         "ua" => getUA(),
-        "path" => get_current_url()
+        "path" => get_current_url(),
+        "header"=>json_encode(getallheaders(),true),
+        "request_data"=>json_encode(input())
     ];
     Db("user_log")->insert($data);
 }
