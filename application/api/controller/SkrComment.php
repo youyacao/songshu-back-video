@@ -1,0 +1,84 @@
+<?php
+
+
+namespace app\api\controller;
+
+
+use think\Controller;
+
+class SkrComment extends Controller
+{
+    /**
+     * Notes:点赞/取消点赞操作
+     * User: BigNiu
+     * Date: 2019/10/8
+     * Time: 17:57
+     */
+    public function getLike(){
+        $user = session("user") ;
+
+        if (!$user) {
+            return error("未登录");
+        }
+        $type = input("type/i")==0?0:1;//0为取消点赞，1为点赞
+        $cid = input("cid/i");
+        $vid = input("vid/i");
+        $uid = $user['id'];
+        $video = Db("video")->where(['id'=>$vid])->find();
+        if(!$video)
+        {
+            u_log("用户".$user['name']."(".$user['id'].")点赞<".$video['title']."(".$vid.")>的评论失败，视频已删除");
+            return error("点赞失败，视频已删除");
+        }
+        $comment = Db("comment")->where(['id'=>$cid])->find();
+        if(!$comment)
+        {
+            u_log("用户".$user['name']."(".$user['id'].")点赞<".$video['title']."(".$vid.")>的评论失败，评论已删除");
+            return error("点赞失败，该评论已删除");
+        }
+        $skr_comment = Db("skr_comment")->where(['uid'=>$uid,'cid'=>$cid,'vid'=>$vid])->find();
+        if($skr_comment)
+        {
+            if($skr_comment['skr']==$type)
+            {
+
+                if($type==0)
+                {
+                    u_log("用户".$user['name']."(".$user['id'].")取消点赞<".$video['title']."(".$vid.")>的评论“".$comment['content']."”成功");
+                    return success("取消点赞成功");
+                }
+                u_log("用户".$user['name']."(".$user['id'].")点赞<".$video['title']."(".$vid.")>的评论“".$comment['content']."”成功");
+                return success("点赞成功");
+            }
+            //如果点赞记录已存在，直接修改
+            $id = Db("skr_comment")->where(['uid'=>$uid,'cid'=>$cid,'vid'=>$vid])->update(['skr'=>$type,'update_time'=>TIME]);
+        }else{
+            //如果不存在，新增一条记录
+            $data = [
+                'uid'=>$uid,
+                'vid'=>$vid,
+                'cid'=>$cid,
+                'skr'=>$type,
+                'create_time'=>TIME
+            ];
+            $id = Db("skr_comment")->insertGetId($data);
+        }
+        if($id)
+        {
+            if($type==0)
+            {
+                u_log("用户".$user['name']."(".$user['id'].")取消点赞<".$video['title']."(".$vid.")>的评论“".$comment['content']."”成功");
+                return success("取消点赞成功");
+            }
+            u_log("用户".$user['name']."(".$user['id'].")点赞<".$video['title']."(".$vid.")>的评论“".$comment['content']."”成功");
+            return success("点赞成功");
+        }
+        if($type==0)
+        {
+            u_log("用户".$user['name']."(".$user['id'].")取消点赞<".$video['title']."(".$vid.")>的评论“".$comment['content']."”失败");
+            return error("取消点赞失败");
+        }
+        u_log("用户".$user['name']."(".$user['id'].")点赞<".$video['title']."(".$vid.")>的评论“".$comment['content']."”失败");
+        return error("点赞失败");
+    }
+}

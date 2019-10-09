@@ -29,18 +29,33 @@ class Comment extends Controller
      */
     public function getList(){
         $vid = input("vid");
-        $page = input("page");
+        $cid = input("cid",0);
+        $page = input("page",1);
         $comments = Db("comment c")
-            ->where(['vid'=>$vid,"pid"=>0,"state"=>0])
+            ->where(['c.vid'=>$vid,"pid"=>$cid,"state"=>0])
             ->join("user u","c.uid=u.id","left")
             ->join("skr_comment s","c.id=s.cid","left")
-            ->field(["c.id","c.content","c.vid","c.pid","c.uid","u.name","u.head_img"])
+            ->field([
+                "c.id",//评论ID
+                "c.content",//评论内容
+                "c.vid",//视频ID
+                "c.pid",//上级评论ID
+                "c.uid",//评论用户ID
+                "u.name",//评论用户名
+                "ifnull(u.head_img,'static/image/head.png') head_img",//评论用户头像
+                "count(distinct s.id) skr_count"//评论点赞数
+            ])
             ->page($page,10)
             ->order("c.create_time")
+            ->group("c.id")
             ->select();
         $comments=$this->subComment($comments,$vid);
         if(!$comments)
         {
+            if($page>1)
+            {
+                return error("暂无更多评论");
+            }
             return error("暂无评论");
         }
         return success("成功",$comments);
@@ -61,11 +76,23 @@ class Comment extends Controller
     private function subComment($comments,$vid){
         foreach ($comments  as $key=>$item)
         {
+
             $subcomments = Db("comment c")
-                ->where(['vid'=>$vid,"pid"=>$item['id'],"state"=>0])
-                ->join("user u","c.uid=u.id")
-                ->field(["c.id","c.content","c.vid","c.pid","c.uid","u.name","u.head_img"])
+                ->where(['c.vid'=>$vid,"c.pid"=>$item['id'],"state"=>0])
+                ->join("user u","c.uid=u.id","left")
+                ->join("skr_comment s","c.id=s.cid","left")
+                ->field([
+                    "c.id",//评论ID
+                    "c.content",//评论内容
+                    "c.vid",//视频ID
+                    "c.pid",//上级评论ID
+                    "c.uid",//评论用户ID
+                    "u.name",//评论用户名
+                    "ifnull(u.head_img,'static/image/head.png') head_img",//评论用户头像
+                    "count(distinct s.id) skr_count"//评论点赞数
+                ])
                 ->page(0 ,10)
+                ->group("c.id")
                 ->order("c.create_time")
                 ->select();
             $subcomments=$this->subComment($subcomments,$vid);
