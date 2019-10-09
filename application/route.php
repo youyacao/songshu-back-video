@@ -17,7 +17,18 @@ Route::controller('type','api/type');
 
 Route::controller('user','api/user');
 
+Route::controller('skr_comment','api/skrComment');
+
 Route::controller('comment','api/comment');
+
+Route::controller('skr','api/skr');
+
+Route::controller('collect','api/collection');
+
+Route::controller('follow','api/follow');
+
+Route::controller('seach','api/seacher');
+
 
 
 Route::controller('captcha','index/index/captcha');
