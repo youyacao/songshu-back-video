@@ -7,7 +7,9 @@ namespace app\api\controller;
 use think\Controller;
 use think\db\exception\DataNotFoundException;
 use think\db\exception\ModelNotFoundException;
+use think\Exception;
 use think\exception\DbException;
+use think\exception\PDOException;
 use think\response\Json;
 
 class Seacher
@@ -36,10 +38,12 @@ class Seacher
             'type'=>"user"
         ];
         Db("seach_history")->insert($seacher);
-        $data = Db("user")
-            ->whereLike("name", '%'.$text.'%', "or")
-            ->whereLike("phone", '%'.$text.'%', "or")
-            ->field(['id', 'name', 'phone', "ifnull(head_img,'static/image/head.png') head_img"])
+        $data = Db("user u")
+            ->join("follow f","u.id=f.follow_id",'left')
+            ->group("u.id")
+            ->whereLike("u.name", '%'.$text.'%', "or")
+            ->whereLike("u.phone", $text, "or")
+            ->field(['u.id', 'u.name', 'u.phone', "ifnull(u.head_img,'static/image/head.png') head_img","count(f.id) follow_count"])
             ->page($page, 10)
             ->select();
         if ($data) {
@@ -140,6 +144,16 @@ class Seacher
         return error("暂无搜索记录");
 
     }
+
+    /**
+     * Notes:清空历史记录
+     * User: BigNiu
+     * Date: 2019/10/9
+     * Time: 17:55
+     * @return Json
+     * @throws Exception
+     * @throws PDOException
+     */
     public function getClear(){
         $user = session("user") ;
         if (!$user) {
