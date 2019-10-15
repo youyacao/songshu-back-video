@@ -20,8 +20,6 @@ class Seacher
      * Date: 2019/10/9
      * Time: 17:03
      * @return Json
-     * @throws DataNotFoundException
-     * @throws DbException
      */
     public function postUser()
     {

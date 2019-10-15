@@ -22,9 +22,14 @@ class Video
      */
     public function getView()
     {
-        $vid = input("vid");
-        $user = session("user") ? session("user") : session("guest_user");
 
+        $vid = input("id");
+        $user = session("user") ? session("user") : session("guest_user");
+        $video = Db("video")->where(['id'=>$vid])->find();
+
+        if(!$video){
+            return error("该视频已删除");
+        }
         if (!$user) {
             return error("未登录");
         }
