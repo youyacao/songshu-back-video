@@ -12,7 +12,7 @@ use think\exception\DbException;
 use think\exception\PDOException;
 use think\response\Json;
 
-class Seacher
+class Searcher
 {
     /**
      * Notes: 搜索用户
@@ -41,8 +41,8 @@ class Seacher
             ->group("u.id")
             ->whereLike("u.name", '%'.$text.'%', "or")
             ->whereLike("u.phone", $text, "or")
-            ->field(['u.id', 'u.name', 'u.phone', "ifnull(u.head_img,'static/image/head.png') head_img","count(f.id) follow_count"])
-            ->page($page, 10)
+            ->field(['u.id', 'u.name', "ifnull(u.head_img,'static/image/head.png') head_img","count(f.id) follow_count"])
+            ->page($page, 20)
             ->select();
         if ($data) {
             return success("搜索成功", $data);
@@ -92,7 +92,7 @@ class Seacher
             ->join("view_history h", "v.id=h.vid", "left")
             ->join("comment c", "v.id=c.vid and c.pid=0", "left")
             ->order("skr desc,create_time")
-            ->page($page, 10)
+            ->page($page, 20)
             ->group("v.id")
             ->field([
                 "v.id",//视频ID

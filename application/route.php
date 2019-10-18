@@ -27,7 +27,7 @@ Route::controller('collect','api/collection');
 
 Route::controller('follow','api/follow');
 
-Route::controller('seach','api/seacher');
+Route::controller('search','api/searcher');
 
 
 

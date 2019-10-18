@@ -46,7 +46,7 @@ class Comment extends Controller
                 "count(distinct s.id) skr_count"//评论点赞数
             ])
             ->page($page,10)
-            ->order("c.create_time")
+            ->order("c.create_time desc")
             ->group("c.id")
             ->select();
         $comments=$this->subComment($comments,$vid);

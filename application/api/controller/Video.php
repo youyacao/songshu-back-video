@@ -25,9 +25,9 @@ class Video
 
         $vid = input("id");
         $user = session("user") ? session("user") : session("guest_user");
-        $video = Db("video")->where(['id'=>$vid])->find();
+        $video = Db("video")->where(['id' => $vid])->find();
 
-        if(!$video){
+        if (!$video) {
             return error("该视频已删除");
         }
         if (!$user) {
@@ -45,6 +45,7 @@ class Video
         }
         return success("成功");
     }
+
     /**
      * 根据用户ID获取视频数据
      * @param $user 用户信息
@@ -56,15 +57,16 @@ class Video
      */
     private function getVideoData($user, $newVideo = false)
     {
+        $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
         if ($newVideo) {
-            $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
+
             $list = Db("video v")
                 ->join("skr s", "v.id=s.vid and '" . $user['id'] . "'=s.uid", "left")//视频ID等于点赞视频ID并且当前用户ID登录点赞用户ID
                 ->join("skr s1", "v.id=s1.vid", "left")//视频ID等于点赞视频ID
                 ->join("user u", "v.uid=u.id", "left")//视频用户ID等于用户ID
                 ->join("view_history h", "v.id=h.vid", "left")//视频ID等于播放历史视频ID
                 ->join("comment c", "v.id=c.vid and c.pid=0", "left")//视频ID等于评论视频ID并且评论上级ID未0，即一级评论
-                ->page($page,10)
+                ->page($page, 20)
                 ->group("v.id")
                 ->field([
                     "v.id",//视频ID
@@ -86,7 +88,7 @@ class Video
         } else {
             //通过ID获取已看视频ID
             $vids = Db("view_history")->where(["uid" => $user['id']])->field("vid")->select();
-            $ids = array_column($vids,"vid");;
+            $ids = array_column($vids, "vid");;
 
             //通过已看视频ID获取未看视频并通过发布时间倒序排序
             $list = Db("video v")
@@ -97,7 +99,7 @@ class Video
                 ->join("view_history h", "v.id=h.vid", "left")
                 ->join("comment c", "v.id=c.vid and c.pid=0", "left")
                 ->order("skr desc")
-                ->limit(10)
+                ->page($page, 20)
                 ->group("v.id")
                 ->field([
                     "v.id",//视频ID
@@ -142,8 +144,7 @@ class Video
             ->where(['uid' => $user['id']])
             ->field("follow_id")
             ->select();
-        $ids = array_column($follow_ids,"follow_id");;
-
+        $ids = array_column($follow_ids, "follow_id");;
 
 
         //通过已看视频ID获取未看视频并通过发布时间倒序排序
@@ -155,7 +156,7 @@ class Video
             ->join("view_history h", "v.id=h.vid", "left")
             ->join("comment c", "v.id=c.vid and c.pid=0", "left")
             ->order("skr desc,create_time")
-            ->page($page, 10)
+            ->page($page, 20)
             ->group("v.id")
             ->field([
                 "v.id",//视频ID
@@ -189,14 +190,12 @@ class Video
     {
         $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
         $typeid = input("typeid/i");//分类ID
-        if(!$typeid)
-        {
+        if (!$typeid) {
             //分类信息不存在，直接返回空数据
             return [];
         }
-        $typeinfo = Db("type")->where(['id'=>$typeid])->find();
-        if(!$typeinfo)
-        {
+        $typeinfo = Db("type")->where(['id' => $typeid])->find();
+        if (!$typeinfo) {
             //分类信息不存在，直接返回空数据
             return [];
         }
@@ -216,7 +215,7 @@ class Video
             ->join("view_history h", "v.id=h.vid", "left")
             ->join("comment c", "v.id=c.vid and c.pid=0", "left")
             ->order("skr desc,create_time")
-            ->page($page, 10)
+            ->page($page, 20)
             ->group("v.id")
             ->field([
                 "v.id",//视频ID
@@ -259,7 +258,7 @@ class Video
             ->join("user u", "v.uid=u.id", "left")//视频用户ID等于用户ID
             ->join("view_history h", "v.id=h.vid", "left")//视频ID等于播放历史视频ID
             ->join("comment c", "v.id=c.vid and c.pid=0", "left")//视频ID等于评论视频ID并且评论上级ID未0，即一级评论
-            ->page($page, 10)
+            ->page($page, 20)
             ->group("v.id")
             ->field([
                 "v.id",//视频ID
@@ -280,6 +279,7 @@ class Video
         u_log("用户" . $user['name'] . "(" . $user['id'] . ")查看第" . $page . "页作品列表");
         return $list;
     }
+
     /**
      * Notes:我喜欢的视频
      * User: BigNiu
@@ -287,20 +287,21 @@ class Video
      * Time: 14:59
      * @return Json
      */
-    private function getLikeList(){
-        $page  = input("page/i",1)<=1?1:input("page/i",1);
+    private function getLikeList()
+    {
+        $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
         $user = session("user");
         if (!$user) {
             return error("未登录");
         }
         $list = Db("skr s")
-            ->where(['s.uid'=>$user['id']])
-            ->join("video v","s.vid = v.id","left")
+            ->where(['s.uid' => $user['id']])
+            ->join("video v", "s.vid = v.id", "left")
             ->join("skr s1", "v.id=s1.vid", "left")//视频ID等于点赞视频ID
             ->join("user u", "v.uid=u.id", "left")//视频用户ID等于用户ID
             ->join("view_history h", "v.id=h.vid", "left")//视频ID等于播放历史视频ID
             ->join("comment c", "v.id=c.vid and c.pid=0", "left")//视频ID等于评论视频ID并且评论上级ID未0，即一级评论
-            ->page($page,10)
+            ->page($page, 10)
             ->group("v.id")
             ->field([
                 "v.id",//视频ID
@@ -318,9 +319,10 @@ class Video
             ])
             ->order(['s.create_time' => 'desc'])//根据点赞数排序如同级根据发布时间排序，最新的在最上面
             ->select();
-        u_log("用户".$user['name']."(".$user['id'].")查看第".$page."页喜欢列表");
+        u_log("用户" . $user['name'] . "(" . $user['id'] . ")查看第" . $page . "页喜欢列表");
         return $list;
     }
+
     /**
      * Notes:获取视频
      * User: BigNiu
@@ -336,6 +338,7 @@ class Video
         $type = input("type", "hot");
         $types = [
             'follow',//关注
+            'collection',//收藏
             'new',//普通
             'user',//用户发布
             'likes',//用户点赞的视频
@@ -358,6 +361,9 @@ class Video
             case "follow":
                 //关注
                 $data = $this->getFollowList();
+                break;
+            case "collection":
+                $data = $this->getCollection();
                 break;
             case "custom":
                 //自定义
@@ -383,8 +389,8 @@ class Video
                 }
                 break;
         }
-        if(!$data)
-        {
+
+        if (!$data) {
             return error("暂无数据");
         }
         //通过用户token获取数据
@@ -435,5 +441,51 @@ class Video
         $data['id'] = $id;
         u_log("用户" . $user['name'] . "(" . $user['id'] . ")发布视频成功");
         return success("成功", $data);
+    }
+
+    /**
+     * Notes:获取收藏列表
+     * User: BigNiu
+     * Date: 2019/10/9
+     * Time: 12:56
+     * @return Json
+     */
+
+    private function getCollection()
+    {
+
+        $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
+        $user = session("user");
+        if (!$user) {
+            return error("未登录");
+        }
+        $collections = Db("collection co")
+            ->where(['co.uid' => $user['id']])//收藏用户ID等于当前用户的ID
+            ->whereNotNull("v.id")//视频未被删除
+            ->join("video v", "co.vid=v.id", "left")//收藏ID等于视频的ID
+            ->join("skr s", "v.id=s.vid and " . $user['id'] . "=s.uid", "left")//视频ID等于点赞视频ID并且当前用户ID登录点赞用户ID
+            ->join("skr s1", "v.id=s1.vid", "left")//视频ID等于点赞视频ID
+            ->join("user u", "v.uid=u.id", "left")//视频用户ID等于用户ID
+            ->join("view_history h", "v.id=h.vid", "left")//视频ID等于播放历史视频ID
+            ->join("comment c", "v.id=c.vid and c.pid=0", "left")//视频ID等于评论视频ID并且评论上级ID未0，即一级评论
+            ->group("v.id")
+            ->field([
+                "v.id",//视频ID
+                "v.title",//视频标题
+                "v.url",//视频链接
+                "v.img",//视频图片
+                "v.create_time",//视频创建时间
+                "v.uid",//视频对应用户ID
+                "u.name",//视频发布人名称
+                "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
+                "count(distinct s1.id) skr_count",//点赞数
+                "ifnull(s.skr,'0') skr",//当前用户是否点赞
+                "count(distinct c.id) comment_count",//评论数
+                "count(distinct h.id) view_count",//播放次数
+            ])
+            ->page($page, 10)
+            ->select();
+        u_log("用户" . $user['name'] . "(" . $user['id'] . ")查看收藏列表");
+        return $collections;
     }
 }

@@ -111,7 +111,16 @@ class User extends Controller
         }
         $user = Db("user")
             ->where(['id'=>$user['id']])
-            ->field(['id','ifnull(name,phone) name','password','phone','mail','qq','create_time',"ifnull(head_img,'static/image/head.png') head_img"])
+            ->field([
+                'id',
+                'ifnull(name,phone) name',
+                'password',
+                'phone',
+                'mail',
+                'qq',
+                'create_time',
+                "ifnull(head_img,'static/image/head.png') head_img"
+            ])
             ->find();
         $vids = Db("video")->where(['uid'=>$user['id']])->field("id")->select();
         $ids = array_column($vids,"id");
