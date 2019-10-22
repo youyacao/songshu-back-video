@@ -38,10 +38,18 @@ class Searcher
         Db("seach_history")->insert($seacher);
         $data = Db("user u")
             ->join("follow f","u.id=f.follow_id",'left')
+            ->join("follow f1","f1.follow_id=u.id and f1.uid = '".$user['id']."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
             ->group("u.id")
             ->whereLike("u.name", '%'.$text.'%', "or")
             ->whereLike("u.phone", $text, "or")
-            ->field(['u.id', 'u.name', "ifnull(u.head_img,'static/image/head.png') head_img","count(f.id) follow_count"])
+            ->field([
+                'u.id',//用户id
+                'u.name',//用户名
+                "ifnull(u.head_img,'static/image/head.png') head_img",//头像
+                "count(f.id) follow_count",//关注数
+                "ifnull(f1.create_time,'0') follow",//当前用户是否关注
+            ])
+            ->order('follow desc')
             ->page($page, 20)
             ->select();
         if ($data) {

@@ -64,6 +64,7 @@ class Video
                 ->join("skr s", "v.id=s.vid and '" . $user['id'] . "'=s.uid", "left")//视频ID等于点赞视频ID并且当前用户ID登录点赞用户ID
                 ->join("skr s1", "v.id=s1.vid", "left")//视频ID等于点赞视频ID
                 ->join("user u", "v.uid=u.id", "left")//视频用户ID等于用户ID
+                ->join("follow f","v.uid=f.follow_id and f.uid = '".$user['id']."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
                 ->join("view_history h", "v.id=h.vid", "left")//视频ID等于播放历史视频ID
                 ->join("comment c", "v.id=c.vid and c.pid=0", "left")//视频ID等于评论视频ID并且评论上级ID未0，即一级评论
                 ->page($page, 20)
@@ -79,6 +80,7 @@ class Video
                     "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
                     "count(distinct s1.id) skr_count",//点赞数
                     "ifnull(s.skr,'0') skr",//当前用户是否点赞
+                    "ifnull(f.id,'0') follow",//当前用户是否关注
                     "count(distinct c.id) comment_count",//评论数
                     "count(distinct h.id) view_count",//播放次数
                 ])
@@ -96,6 +98,7 @@ class Video
                 ->join("skr s", "v.id=s.vid and '" . $user['id'] . "'=s.uid", "left")
                 ->join("skr s1", "v.id=s1.vid", "left")
                 ->join("user u", "v.uid=u.id", "left")
+                ->join("follow f","v.uid=f.follow_id and f.uid = '".$user['id']."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
                 ->join("view_history h", "v.id=h.vid", "left")
                 ->join("comment c", "v.id=c.vid and c.pid=0", "left")
                 ->order("skr desc")
@@ -112,6 +115,7 @@ class Video
                     "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
                     "count(distinct s1.id) skr_count",//点赞数
                     "ifnull(s.skr,'0') skr",//当前用户是否点赞
+                    "ifnull(f.id,'0') follow",//当前用户是否关注
                     "count(distinct c.id) comment_count",//评论数
                     "count(distinct h.id) view_count",//播放次数
                 ])
@@ -153,6 +157,7 @@ class Video
             ->join("skr s", "v.id=s.vid and '" . $user['id'] . "'=s.uid", "left")
             ->join("skr s1", "v.id=s1.vid", "left")
             ->join("user u", "v.uid=u.id", "left")
+            ->join("follow f","v.uid=f.follow_id and f.uid = '".$user['id']."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
             ->join("view_history h", "v.id=h.vid", "left")
             ->join("comment c", "v.id=c.vid and c.pid=0", "left")
             ->order("skr desc,create_time")
@@ -169,6 +174,7 @@ class Video
                 "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
                 "count(distinct s1.id) skr_count",//点赞数
                 "ifnull(s.skr,'0') skr",//当前用户是否点赞
+                "ifnull(f.id,'0') follow",//当前用户是否关注
                 "count(distinct c.id) comment_count",//评论数
                 "count(distinct h.id) view_count",//播放次数
             ])
@@ -212,6 +218,7 @@ class Video
             ->join("skr s", "v.id=s.vid and '" . $user['id'] . "'=s.uid", "left")
             ->join("skr s1", "v.id=s1.vid", "left")
             ->join("user u", "v.uid=u.id", "left")
+            ->join("follow f","v.uid=f.follow_id and f.uid = '".$user['id']."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
             ->join("view_history h", "v.id=h.vid", "left")
             ->join("comment c", "v.id=c.vid and c.pid=0", "left")
             ->order("skr desc,create_time")
@@ -228,6 +235,7 @@ class Video
                 "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
                 "count(distinct s1.id) skr_count",//点赞数
                 "ifnull(s.skr,'0') skr",//当前用户是否点赞
+                "ifnull(f.id,'0') follow",//当前用户是否关注
                 "count(distinct c.id) comment_count",//评论数
                 "count(distinct h.id) view_count",//播放次数
             ])
@@ -244,18 +252,16 @@ class Video
      * Time: 14:55
      * @return Json
      */
-    private function getUserVideo()
+    private function getUserVideo($uid)
     {
         $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
-        $user = session("user");
-        if (!$user) {
-            return error("未登录");
-        }
+
         $list = Db("video v")
-            ->where(['v.uid' => $user['id']])
-            ->join("skr s", "v.id=s.vid and " . $user['id'] . "=s.uid", "left")//视频ID等于点赞视频ID并且当前用户ID登录点赞用户ID
+            ->where(['v.uid' => $uid])
+            ->join("skr s", "v.id=s.vid and " .$uid . "=s.uid", "left")//视频ID等于点赞视频ID并且当前用户ID登录点赞用户ID
             ->join("skr s1", "v.id=s1.vid", "left")//视频ID等于点赞视频ID
             ->join("user u", "v.uid=u.id", "left")//视频用户ID等于用户ID
+            ->join("follow f","v.uid=f.follow_id and f.uid = '".$uid."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
             ->join("view_history h", "v.id=h.vid", "left")//视频ID等于播放历史视频ID
             ->join("comment c", "v.id=c.vid and c.pid=0", "left")//视频ID等于评论视频ID并且评论上级ID未0，即一级评论
             ->page($page, 20)
@@ -271,12 +277,12 @@ class Video
                 "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
                 "count(distinct s1.id) skr_count",//点赞数
                 "ifnull(s.skr,'0') skr",//当前用户是否点赞
+                "ifnull(f.id,'0') follow",//当前用户是否关注
                 "count(distinct c.id) comment_count",//评论数
                 "count(distinct h.id) view_count",//播放次数
             ])
             ->order(['create_time' => 'desc'])//根据点赞数排序如同级根据发布时间排序，最新的在最上面
             ->select();
-        u_log("用户" . $user['name'] . "(" . $user['id'] . ")查看第" . $page . "页作品列表");
         return $list;
     }
 
@@ -287,18 +293,16 @@ class Video
      * Time: 14:59
      * @return Json
      */
-    private function getLikeList()
+    private function getLikeList($uid)
     {
         $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
-        $user = session("user");
-        if (!$user) {
-            return error("未登录");
-        }
+
         $list = Db("skr s")
-            ->where(['s.uid' => $user['id']])
+            ->where(['s.uid' => $uid])
             ->join("video v", "s.vid = v.id", "left")
             ->join("skr s1", "v.id=s1.vid", "left")//视频ID等于点赞视频ID
             ->join("user u", "v.uid=u.id", "left")//视频用户ID等于用户ID
+            ->join("follow f","v.uid=f.follow_id and f.uid = '".$uid."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
             ->join("view_history h", "v.id=h.vid", "left")//视频ID等于播放历史视频ID
             ->join("comment c", "v.id=c.vid and c.pid=0", "left")//视频ID等于评论视频ID并且评论上级ID未0，即一级评论
             ->page($page, 10)
@@ -314,12 +318,13 @@ class Video
                 "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
                 "count(distinct s1.id) skr_count",//点赞数
                 "ifnull(s.skr,'0') skr",//当前用户是否点赞
+                "ifnull(f.id,'0') follow",//当前用户是否关注
                 "count(distinct c.id) comment_count",//评论数
                 "count(distinct h.id) view_count",//播放次数
             ])
             ->order(['s.create_time' => 'desc'])//根据点赞数排序如同级根据发布时间排序，最新的在最上面
             ->select();
-        u_log("用户" . $user['name'] . "(" . $user['id'] . ")查看第" . $page . "页喜欢列表");
+
         return $list;
     }
 
@@ -344,6 +349,8 @@ class Video
             'likes',//用户点赞的视频
             'hot',//热门
             'custom',//自定义分类
+            'other',//其他用户发布视频
+            'otherLike',//其他用户喜欢视频
         ];
 
         if (!in_array($type, $types)) {
@@ -375,11 +382,21 @@ class Video
                 break;
             case "user":
                 //用户作品
-                $data = $this->getUserVideo();
+                $data = $this->getUserVideo($user['id']);
                 break;
             case "likes":
                 //用户点赞的视频
-                $data = $this->getLikeList();
+                $data = $this->getLikeList($user['id']);
+                break;
+            case "other":
+                //其他用户作品
+                $uid = input('uid/i');
+                $data = $this->getUserVideo($uid);
+                break;
+            case "otherLike":
+                //其他用户点赞作品
+                $uid = input('uid/i');
+                $data = $this->getLikeList($uid);
                 break;
             case "hot":
                 //最热
@@ -466,6 +483,7 @@ class Video
             ->join("skr s", "v.id=s.vid and " . $user['id'] . "=s.uid", "left")//视频ID等于点赞视频ID并且当前用户ID登录点赞用户ID
             ->join("skr s1", "v.id=s1.vid", "left")//视频ID等于点赞视频ID
             ->join("user u", "v.uid=u.id", "left")//视频用户ID等于用户ID
+            ->join("follow f","v.uid=f.follow_id and f.uid = '".$user['id']."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
             ->join("view_history h", "v.id=h.vid", "left")//视频ID等于播放历史视频ID
             ->join("comment c", "v.id=c.vid and c.pid=0", "left")//视频ID等于评论视频ID并且评论上级ID未0，即一级评论
             ->group("v.id")
@@ -480,6 +498,7 @@ class Video
                 "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
                 "count(distinct s1.id) skr_count",//点赞数
                 "ifnull(s.skr,'0') skr",//当前用户是否点赞
+                "ifnull(f.id,'0') follow",//当前用户是否关注
                 "count(distinct c.id) comment_count",//评论数
                 "count(distinct h.id) view_count",//播放次数
             ])

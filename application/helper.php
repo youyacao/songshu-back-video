@@ -239,9 +239,13 @@ function getImg($url)
     /**
      * TODO 通过视频地址截取视频片段
      */
-    $cmd = "ffmpeg -i ".str_replace("&","",$url)." -ss 00:00:00 -t 1 uploads/img/".md5($url).".png -y";
+    $path = "uploads/img/".md5($url).".png";
+    if(is_file($path)){
+        return $path;
+    }
+    $cmd = "ffmpeg -i ".str_replace("&","",$url)." -ss 00:00:00 -t 1 ".$path." -y";
     shell_exec($cmd);
-    return "uploads/img/".md5($url).".png";
+    return $path;
 }
 
 function get_current_url()

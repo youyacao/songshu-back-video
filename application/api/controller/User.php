@@ -4,6 +4,7 @@
 namespace app\api\controller;
 
 
+use app\api\common\Sms;
 use think\Controller;
 use think\db\exception\DataNotFoundException;
 use think\db\exception\ModelNotFoundException;
@@ -48,11 +49,11 @@ class User extends Controller
                 return success("登录成功",$user);
                 break;
             case "phone"://手机验证码登录
-                $phone = input("phone");//手机号
+                $phone = input("phone/i");//手机号
                 $user = Db("user")->where(['phone'=>$phone])->find();
-                $code = input("code");
-                //TODO 判断短信验证码是否正确
-                if(false)
+                $code = input("code/i");
+                //判断短信验证码是否正确
+                if(!Sms::verifySms($phone,$code))
                 {
                     return error("验证码错误");
                 }
@@ -132,11 +133,54 @@ class User extends Controller
         $user['set_pass']=$password?true:false;//是否设置密码
         $user['skr_count']=$skr_count;//获赞数
         $user['fans_count']=$fans_count;// 粉丝数
-        $user['follow_count']=$follow_count;//TODO 关注数
+        $user['follow_count']=$follow_count;//关注数
         u_log("用户".$user['name']."(".$user['id'].")获取用户最新信息");
         return success("成功",$user);
     }
+    /**
+     * Notes:获取用户信息
+     * User: BigNiu
+     * Date: 2019/10/9
+     * Time: 15:11
+     * @return Json
+     * @throws DataNotFoundException
+     * @throws ModelNotFoundException
+     * @throws DbException
+     * @throws Exception
+     */
+    public function getOtherUserInfo(){
+        $user = session("user");
+        /*if (!$user) {
+            return error("未登录");
+        }*/
+        $uid = input('uid/i');
+        $follow = Db("follow")->where(['uid'=>$user['id'],'follow_id'=>$uid])->find();
 
+        $user = Db("user")
+            ->where(['id'=>$uid])
+            ->field([
+                'id',
+                'ifnull(name,phone) name',
+                'create_time',
+                "ifnull(head_img,'static/image/head.png') head_img"
+            ])
+            ->find();
+        if(!$user){
+            return error("用户不存在");
+        }
+
+        $vids = Db("video")->where(['uid'=>$user['id']])->field("id")->select();
+        $ids = array_column($vids,"id");
+        $skr_count = Db("skr")->whereIn('vid',$ids)->count('id');//获赞数
+        $fans_count = Db("follow")->where(['follow_id'=>$user['id']])->count('id');
+        $follow_count = Db("follow")->where(['uid'=>$user['id']])->count('id');
+        $user['skr_count']=$skr_count;//获赞数
+        $user['fans_count']=$fans_count;// 粉丝数
+        $user['follow_count']=$follow_count;//关注数
+
+        $user['follow']=$follow!=null?true:false;
+        return success("成功",$user);
+    }
     /**
      * Notes:更新用户资料
      * User: BigNiu

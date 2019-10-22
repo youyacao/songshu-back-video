@@ -41,6 +41,7 @@ class Comment extends Controller
                 "c.vid",//视频ID
                 "c.pid",//上级评论ID
                 "c.uid",//评论用户ID
+                "date_format( c.create_time, '%m-%d %h:%i' ) AS create_time ",//评论时间
                 "u.name",//评论用户名
                 "ifnull(u.head_img,'static/image/head.png') head_img",//评论用户头像
                 "count(distinct s.id) skr_count"//评论点赞数
@@ -87,6 +88,7 @@ class Comment extends Controller
                     "c.vid",//视频ID
                     "c.pid",//上级评论ID
                     "c.uid",//评论用户ID
+                    "date_format( c.create_time, '%m-%d %h:%i' ) AS create_time ",//评论时间
                     "u.name",//评论用户名
                     "ifnull(u.head_img,'static/image/head.png') head_img",//评论用户头像
                     "count(distinct s.id) skr_count"//评论点赞数
@@ -145,6 +147,7 @@ class Comment extends Controller
             $id = Db("comment")->insertGetId($data);
             $data["id"]=$id;
             u_log("用户".$user['name']."(".$user['id'].")发送评论(".$content.")成功");
+            $data['create_time']=date("m-d H:i",time());
             return success("评论成功",$data);
         }else{
             //视频一级评论
@@ -159,6 +162,7 @@ class Comment extends Controller
             $id = Db("comment")->insertGetId($data);
             $data["id"]=$id;
             u_log("用户".$user['name']."(".$user['id'].")发送评论(".$content.")成功");
+            $data['create_time']=date("m-d H:i",time());
             return success("评论成功",$data);
         }
     }

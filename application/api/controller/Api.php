@@ -4,6 +4,7 @@
 namespace app\api\controller;
 
 
+use app\api\common\Sms;
 use Qiniu\Auth;
 use Qiniu\Storage\UploadManager;
 use think\Config;
@@ -40,9 +41,23 @@ class Api extends Controller
         }
         // 移动到框架应用根目录/public/uploads/ 目录下
         $info = $file->validate(['ext' => $config['ext']])->rule('uniqid')->move(ROOT_PATH . 'public' . DS . 'uploads' . DS . $type);
+
         if ($info) {
+            $url = 'uploads/' . $type . "/" . str_replace(DS, "/", $info->getSaveName());
+            if ($type == 'video') {
+                $data = [
+                    'url' => $url,
+                    'img' => getImg($url)
+                ];
+                return success("上传成功", $data);
+            } else {
+                $data = [
+                    'url' => $url
+                ];
+                return success("上传成功", $data);
+            }
             //上传成功返回路径
-            return success("上传成功", 'uploads/' . $type . "/" . str_replace(DS, "/", $info->getSaveName()));
+
         } else {
             // 上传失败获取错误信息
             return error($file->getError());
@@ -90,6 +105,18 @@ class Api extends Controller
         }
     }
 
+    public function update()
+    {
+        $appid = input('appid');
+        $version=input('version');
+        $data = [
+            "status" => 1,//升级标志，1：需要升级；0：无需升级
+            "note" => "修复bug1；\n修复bug2;\n".$version."\n".$appid,//release notes
+            "url" => "http://www.example.com/uniapp.apk" //更新包下载地址
+        ];
+        return success("成功",$data);
+    }
+
     /**
      * Notes:测试ffmpeg截图
      * User: BigNiu
@@ -112,36 +139,43 @@ class Api extends Controller
 
     public function caiji()
     {
-        $id = 137300;
-         for($i=0;$i<100;$i++){
-             $id+=10;
-             //echo "=================https://api.apiopen.top/videoRecommend?id={$id}=============<br/>";
-             $data = json_decode(file_get_contents("https://api.apiopen.top/videoRecommend?id={$id}"));
-             if($data->code==400){
-                 continue;
-             }
-             $result = $data->result;
-             foreach ($result as $item){
-                 $item_data= $item->data;
-                 if($item->type=='videoSmallCard'){
-                     $url = $item_data->playUrl;
-                     $title = $item_data->title;
+        $id = 137400;
+        for ($i = 0; $i < 100; $i++) {
+            $id += 10;
+            //echo "=================https://api.apiopen.top/videoRecommend?id={$id}=============<br/>";
+            $data = json_decode(file_get_contents("https://api.apiopen.top/videoRecommend?id={$id}"));
+            if ($data->code == 400) {
+                continue;
+            }
+            $result = $data->result;
+            foreach ($result as $item) {
+                $item_data = $item->data;
+                if ($item->type == 'videoSmallCard') {
+                    $url = $item_data->playUrl;
+                    $title = $item_data->title;
                     // echo $title."<br/>";
-                     $img = $item_data->cover->detail;
-                     $insert = [
-                         'url'=>$url,
-                         'img'=>$img,
-                         'title'=>$title,
-                         'type'=>141,
-                         'uid'=>'4',
-                         'create_time'=>TIME
-                     ];
-                     Db("video")->insert($insert);
-                 }
-             }
-         }
+                    $img = $item_data->cover->detail;
+                    $insert = [
+                        'url' => $url,
+                        'img' => $img,
+                        'title' => $title,
+                        'type' => rand(127,141),
+                        'uid' => rand(4,25),
+                        'create_time' => TIME
+                    ];
+                    Db("video")->insert($insert);
+                }
+            }
+        }
+    }
 
-
+    public function sms()
+    {
+        $phone = input('phone/i');
+        if (Sms::sendSms($phone, rand(100000, 999999))) {
+            return success("发送成功");
+        }
+        return error("发送失败");
     }
 
 }

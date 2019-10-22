@@ -39,6 +39,12 @@ class Follow extends Controller
         }
         $type = input("type")=="add"?"add":"cancel";//类型
         $uid = input("uid/i");//被关注用户ID
+        if(!$uid){
+            return error("关注失败");
+        }
+        if($user['id']==$uid){
+            return error("不能关注自己");
+        }
         $follow  = Db("follow")->where(['uid'=>$user['id'],"follow_id"=>$uid])->find();
         if($type=='add')
         {
