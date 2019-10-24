@@ -18,6 +18,16 @@ class User extends Controller
      * Notes: 登录
      *  1.用户名或密码登录
      *  2.手机验证码登录
+     *  3,第三方登录
+     * 微信登录返回数据：
+     *     {
+            "access_token": "26_VsXY7jFe0Q68s45mDNdgg15uzZ7iw7V9YVrzHjwi4kPRcHtxWHXx9_bZwtaK-iXBGVjWFEE93EqO_I8cZlGqd_DtrTnesaGbTM1uuGO6T3c",
+            "expires_in": 7200,
+            "refresh_token": "26_1B7iawAH9A2v2JKrUNqCQCI1Dq1qzQneJNA4-JmPzZ1sWt5KVnBwBLD10wnFGt8JPpCWuzp-AMaEdRX7QdaP54BJ2BUv-3yyQ3gzrricevU",
+            "openid": "oRrdQt18I0MOhKLQWpiGXx2qpz70",
+            "scope": "snsapi_userinfo",
+            "unionid": "oU5Yyt3Vc-2Xo0ytSQ4BpjLS8cWY"
+            }
      * User: BigNiu
      * Date: 2019/10/8
      * Time: 15:58
@@ -120,7 +130,8 @@ class User extends Controller
                 'mail',
                 'qq',
                 'create_time',
-                "ifnull(head_img,'static/image/head.png') head_img"
+                "ifnull(head_img,'static/image/head.png') head_img",
+                "custom_id"
             ])
             ->find();
         $vids = Db("video")->where(['uid'=>$user['id']])->field("id")->select();
@@ -162,7 +173,8 @@ class User extends Controller
                 'id',
                 'ifnull(name,phone) name',
                 'create_time',
-                "ifnull(head_img,'static/image/head.png') head_img"
+                "ifnull(head_img,'static/image/head.png') head_img",
+                "custom_id"
             ])
             ->find();
         if(!$user){
@@ -197,7 +209,7 @@ class User extends Controller
         }
         $name = input("name");//昵称
         $head_img = input("head_img");//头像
-        $id = input("id");//用户自定义ID
+        $id = input("custom_id");//用户自定义ID
         $mail = input("mail");//邮箱号
         $qq = input("qq/i");//QQ
         $birthday = input("birthday");//生日
@@ -257,5 +269,70 @@ class User extends Controller
             return success("修改成功");
         }
         return error("修改失败");
+    }
+
+    /**
+     * Notes:获取自己的关注列表
+     * User: BigNiu
+     * Date: 2019/10/23
+     * Time: 9:49
+     */
+    public function getFollow(){
+        $user = session("user");
+        if (!$user) {
+            return error("未登录");
+        }
+        $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
+        $follow = Db("user u")
+            ->join("follow f","u.id=f.follow_id",'left')
+            ->join("follow f1","f1.follow_id=u.id and f1.uid = '".$user['id']."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
+            ->group("u.id")
+            ->where("f.uid='{$user['id']}'")
+            ->field([
+                'u.id',//用户id
+                'u.name',//用户名
+                "ifnull(u.head_img,'static/image/head.png') head_img",//头像
+                "count(f.id) follow_count",//关注数
+                "ifnull(f1.create_time,'0') follow",//当前用户是否关注
+            ])
+            ->order('follow desc')
+            ->page($page, 20)
+            ->select();
+        if(!$follow){
+            return error("暂无数据");
+        }
+        return success("成功",$follow);
+    }
+    /**
+     * Notes:获取自己的粉丝列表
+     * User: BigNiu
+     * Date: 2019/10/23
+     * Time: 9:49
+     */
+    public function getFans(){
+        $user = session("user");
+        if (!$user) {
+            return error("未登录");
+        }
+        $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
+        $follow = Db("user u")
+            ->join("follow f","u.id=f.follow_id",'left')
+            ->join("follow f1","f1.follow_id=u.id and f1.uid = '".$user['id']."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
+            ->group("u.id")
+            ->where("f.follow_id='{$user['id']}'")
+            ->field([
+                'u.id',//用户id
+                'u.name',//用户名
+                "ifnull(u.head_img,'static/image/head.png') head_img",//头像
+                "count(f.id) follow_count",//关注数
+                "ifnull(f1.create_time,'0') follow",//当前用户是否关注
+            ])
+            ->order('follow desc')
+            ->page($page, 20)
+            ->select();
+        if(!$follow){
+            return error("暂无数据");
+        }
+        return success("成功",$follow);
     }
 }

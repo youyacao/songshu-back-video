@@ -23,7 +23,7 @@ Route::controller('comment','api/comment');
 
 Route::controller('skr','api/skr');
 
-Route::controller('collect','api/collection');
+Route::controller('collection','api/collection');
 
 Route::controller('follow','api/follow');
 
