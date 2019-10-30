@@ -48,10 +48,12 @@ class User extends Controller
                 $user = Db("user")->where(['name'=>$username])->find();
                 if(!$user)
                 {
+                    u_log("用户名:".$username."密码:".$password." 登录失败,用户不存在",'error');
                     return error("用户名或密码错误");
                 }
                 if(pass($password)!=$user['password'])
                 {
+                    u_log("用户名:".$username."密码:".$password." 登录失败,密码错误",'error');
                     return error("用户名或密码错误");
                 }
                 session("user",$user);
@@ -65,6 +67,7 @@ class User extends Controller
                 //判断短信验证码是否正确
                 if(!Sms::verifySms($phone,$code))
                 {
+                    u_log("手机用户".$phone."登录失败",'error');
                     return error("验证码错误");
                 }
                 if(!$user)
@@ -74,33 +77,39 @@ class User extends Controller
                         "phone"=>$phone,
                         "create_time"=>date("Y-m-d H:i:s",time()),
                         "head_img"=>'static/image/head.png',
-                        "name"=>substr($phone,0,3)."****".substr($phone,-4,strlen($phone))
+                        "name"=>substr($phone,0,3)."****".substr($phone,-4,strlen($phone)),
+                        "token"=>pass($phone.time().getRandStr()).$phone
                     ];
                     $id = Db("user")->insertGetId($user);
-                    u_log("手机用户".$phone."注册成功");
+                    u_log("手机用户".$phone."注册成功",'login');
                     $user['id']=$id;
                     session("user",$user);
                     return success("注册成功",$user);
                 }
+                $token = pass($phone.time().getRandStr()).$phone;
+                Db("user")->where(['phone'=>$phone])->update(["token"=>$token]);
+                $user['token']=$token;
                 session("user",$user);
                 unset($user['password']);
+                u_log("手机用户".$phone."登录成功",'login');
                 return success("登录成功",$user);
                 break;
 
         }
         return error("登录失败");
     }
-
-    /**
-     * Notes:退出登录
-     * User: BigNiu
-     * Date: 2019/10/9
-     * Time: 14:51
-     * @return Json
-     */
-    public function getLogout(){
-        session("user",null);
-        return success("退出登录成功");
+    public function getAuth(){
+        $token = input("token",null);
+        if(!$token){
+            return error("验证失败");
+        }
+        $user = Db("user")->where(["token"=>$token])->find();
+        if($user){
+            session("user",$user);
+            unset($user['password']);
+            return success("验证成功",$user);
+        }
+        return error("验证失败");
     }
 
 
@@ -131,7 +140,8 @@ class User extends Controller
                 'qq',
                 'create_time',
                 "ifnull(head_img,'static/image/head.png') head_img",
-                "custom_id"
+                "custom_id",
+                "token"
             ])
             ->find();
         $vids = Db("video")->where(['uid'=>$user['id']])->field("id")->select();
@@ -335,4 +345,20 @@ class User extends Controller
         }
         return success("成功",$follow);
     }
+    /**
+     * Notes:退出登录
+     * User: BigNiu
+     * Date: 2019/10/9
+     * Time: 14:51
+     * @return Json
+     */
+    public function getLogout(){
+        $user = session("user");
+        if($user){
+            Db("user")->where(['id'=>$user['id']])->update(['token'=>null]);
+        }
+        session("user",null);
+        return success("退出登录成功");
+    }
+
 }

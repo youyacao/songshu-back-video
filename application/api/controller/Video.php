@@ -212,12 +212,13 @@ class Video
             return [];
         }
 
-        $user = session("user");
+        $user = session("user") ? session("user") : session("guest_user");
+        //判断当前用户是否登录
         if (!$user) {
-            return error("未登录");
+            //未登录，使用访客用户
+            session("guest_user", ['id' => adminpass(header("user-agent") . time())]);
+            $user = session("guest_user");
         }
-
-
         //通过已看视频ID获取未看视频并通过发布时间倒序排序
         $list = Db("video v")
             ->where("v.type", $typeid)
@@ -316,7 +317,7 @@ class Video
             ->join("collection co","v.id=co.vid and co.uid = '".$uid."'","left")//视频ID等于收藏的视频ID并且收藏的用户ID为当前用户ID
             ->join("view_history h", "v.id=h.vid", "left")//视频ID等于播放历史视频ID
             ->join("comment c", "v.id=c.vid and c.pid=0", "left")//视频ID等于评论视频ID并且评论上级ID未0，即一级评论
-            ->page($page, 10)
+            ->page($page, 20)
             ->group("v.id")
             ->field([
                 "v.id",//视频ID
@@ -515,7 +516,7 @@ class Video
                 "count(distinct c.id) comment_count",//评论数
                 "count(distinct h.id) view_count",//播放次数
             ])
-            ->page($page, 10)
+            ->page($page, 20)
             ->select();
         u_log("用户" . $user['name'] . "(" . $user['id'] . ")查看收藏列表");
         return $collections;
