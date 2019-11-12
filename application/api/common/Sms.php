@@ -30,10 +30,12 @@ class Sms
                 return false;
             } else {
                 //已超时，发送消息
-                //TODO 调试不调用发送短信接口
-                Db("sms")->where(['phone' => $phone])->update(['code' => $code, 'time' => time(), 'count' => 0]);
-                return true;
 
+                //判断是否为本地环境 调试不调用发送短信接口
+                if(isLocal()||$phone=="13800138000"){
+                    Db("sms")->where(['phone' => $phone])->update(['code' => $code, 'time' => time(), 'count' => 0]);
+                    return true;
+                }
                 $result = $sms->send_yzm($data);
                 $data = json_decode($result, true);
                 //判断是否发送成功
@@ -48,9 +50,11 @@ class Sms
         } else {
             //无数据
             //发送消息
-            //TODO 调试不调用发送短信接口
-            Db("sms")->where(['phone' => $phone])->update(['code' => $code, 'time' => time(), 'count' => 0]);
-            return true;
+            //判断是否为本地环境，调试不调用发送短信接口
+            if(isLocal()||$phone=="13800138000"){
+                Db("sms")->where(['phone' => $phone])->update(['code' => $code, 'time' => time(), 'count' => 0]);
+                return true;
+            }
             $result = $sms->send_yzm($data);
 
             $data = json_decode($result, true);
@@ -79,10 +83,14 @@ class Sms
         if (!$phone || !$code) {
             return false;
         }
-        if($code=='123000'){
-            Db('sms')->where(['phone' => $phone])->delete();
-            return true;
+        //判断是否为本地环境
+        if(isLocal()||$phone=="13800138000"){
+            if($code=='123000'){
+                Db('sms')->where(['phone' => $phone])->delete();
+                return true;
+            }
         }
+
 
         $smsData = Db("sms")->where(['phone' => $phone])->find();
         //判断短信记录是否存在

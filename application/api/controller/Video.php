@@ -61,6 +61,7 @@ class Video
         if ($newVideo) {
 
             $list = Db("video v")
+                ->where(['v.state'=>1])
                 ->join("skr s", "v.id=s.vid and '" . $user['id'] . "'=s.uid", "left")//视频ID等于点赞视频ID并且当前用户ID登录点赞用户ID
                 ->join("skr s1", "v.id=s1.vid", "left")//视频ID等于点赞视频ID
                 ->join("user u", "v.uid=u.id", "left")//视频用户ID等于用户ID
@@ -72,11 +73,12 @@ class Video
                 ->group("v.id")
                 ->field([
                     "v.id",//视频ID
-                    "v.title",//视频标题
+                "v.title",//视频标题
                     "v.url",//视频链接
                     "v.img",//视频图片
                     "v.create_time",//视频创建时间
                     "v.uid",//视频对应用户ID
+                    "v.state",//视频状态
                     "u.name",//视频发布人名称
                     "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
                     "count(distinct s1.id) skr_count",//点赞数
@@ -96,6 +98,7 @@ class Video
 
             //通过已看视频ID获取未看视频并通过发布时间倒序排序
             $list = Db("video v")
+                ->where(['v.state'=>1])
                 ->whereNotIn("v.id", $ids)
                 ->join("skr s", "v.id=s.vid and '" . $user['id'] . "'=s.uid", "left")
                 ->join("skr s1", "v.id=s1.vid", "left")
@@ -109,11 +112,12 @@ class Video
                 ->group("v.id")
                 ->field([
                     "v.id",//视频ID
-                    "v.title",//视频标题
+                "v.title",//视频标题
                     "v.url",//视频链接
                     "v.img",//视频图片
                     "v.create_time",//视频创建时间
                     "v.uid",//视频对应用户ID
+                    "v.state",//视频状态
                     "u.name",//视频发布人名称
                     "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
                     "count(distinct s1.id) skr_count",//点赞数
@@ -158,6 +162,7 @@ class Video
         //通过已看视频ID获取未看视频并通过发布时间倒序排序
         $list = Db("video v")
             ->whereIn("v.uid", $ids)
+            ->where(['v.state'=>1])
             ->join("skr s", "v.id=s.vid and '" . $user['id'] . "'=s.uid", "left")
             ->join("skr s1", "v.id=s1.vid", "left")
             ->join("user u", "v.uid=u.id", "left")
@@ -175,6 +180,7 @@ class Video
                 "v.img",//视频图片
                 "v.create_time",//视频创建时间
                 "v.uid",//视频对应用户ID
+                "v.state",//视频状态
                 "u.name",//视频发布人名称
                 "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
                 "count(distinct s1.id) skr_count",//点赞数
@@ -222,6 +228,7 @@ class Video
         //通过已看视频ID获取未看视频并通过发布时间倒序排序
         $list = Db("video v")
             ->where("v.type", $typeid)
+            ->where(['v.state'=>1])
             ->join("skr s", "v.id=s.vid and '" . $user['id'] . "'=s.uid", "left")
             ->join("skr s1", "v.id=s1.vid", "left")
             ->join("user u", "v.uid=u.id", "left")
@@ -229,7 +236,7 @@ class Video
             ->join("collection co","v.id=co.vid and co.uid = '".$user['id']."'","left")//视频ID等于收藏的视频ID并且收藏的用户ID为当前用户ID
             ->join("view_history h", "v.id=h.vid", "left")
             ->join("comment c", "v.id=c.vid and c.pid=0", "left")
-            ->order("skr desc,create_time")
+            ->order("create_time desc")
             ->page($page, 20)
             ->group("v.id")
             ->field([
@@ -239,6 +246,7 @@ class Video
                 "v.img",//视频图片
                 "v.create_time",//视频创建时间
                 "v.uid",//视频对应用户ID
+                "v.state",//视频状态
                 "u.name",//视频发布人名称
                 "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
                 "count(distinct s1.id) skr_count",//点赞数
@@ -256,17 +264,24 @@ class Video
     /**
      * Notes:用户发布的作品
      * @param page 第几页
+     * @param bool $isFilter 是否过滤审核中的
      * User: BigNiu
      * Date: 2019/10/9
      * Time: 14:55
+     *
      * @return Json
      */
-    private function getUserVideo($uid)
+    private function getUserVideo($uid,$isFilter=false)
     {
+        $where = [];
+        if($isFilter){
+            $where = ['v.state'=>1];
+        }
         $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
 
         $list = Db("video v")
             ->where(['v.uid' => $uid])
+            ->where($where)
             ->join("skr s", "v.id=s.vid and '" .$uid . "'=s.uid", "left")//视频ID等于点赞视频ID并且当前用户ID登录点赞用户ID
             ->join("skr s1", "v.id=s1.vid", "left")//视频ID等于点赞视频ID
             ->join("user u", "v.uid=u.id", "left")//视频用户ID等于用户ID
@@ -283,6 +298,7 @@ class Video
                 "v.img",//视频图片
                 "v.create_time",//视频创建时间
                 "v.uid",//视频对应用户ID
+                "v.state",//视频状态
                 "u.name",//视频发布人名称
                 "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
                 "count(distinct s1.id) skr_count",//点赞数
@@ -310,6 +326,7 @@ class Video
 
         $list = Db("skr s")
             ->where(['s.uid' => $uid])
+            ->where(['v.state'=>1])
             ->join("video v", "s.vid = v.id", "left")
             ->join("skr s1", "v.id=s1.vid", "left")//视频ID等于点赞视频ID
             ->join("user u", "v.uid=u.id", "left")//视频用户ID等于用户ID
@@ -326,6 +343,7 @@ class Video
                 "v.img",//视频图片
                 "v.create_time",//视频创建时间
                 "v.uid",//视频对应用户ID
+                "v.state",//视频状态
                 "u.name",//视频发布人名称
                 "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
                 "count(distinct s1.id) skr_count",//点赞数
@@ -404,7 +422,7 @@ class Video
             case "other":
                 //其他用户作品
                 $uid = input('uid/i');
-                $data = $this->getUserVideo($uid);
+                $data = $this->getUserVideo($uid,true);
                 break;
             case "otherLike":
                 //其他用户点赞作品
@@ -491,6 +509,7 @@ class Video
         }
         $collections = Db("collection co")
             ->where(['co.uid' => $user['id']])//收藏用户ID等于当前用户的ID
+            ->where(['v.state'=>1])
             ->whereNotNull("v.id")//视频未被删除
             ->join("video v", "co.vid=v.id", "left")//收藏ID等于视频的ID
             ->join("skr s", "v.id=s.vid and " . $user['id'] . "=s.uid", "left")//视频ID等于点赞视频ID并且当前用户ID登录点赞用户ID
@@ -507,6 +526,7 @@ class Video
                 "v.img",//视频图片
                 "v.create_time",//视频创建时间
                 "v.uid",//视频对应用户ID
+                "v.state",//视频状态
                 "u.name",//视频发布人名称
                 "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
                 "count(distinct s1.id) skr_count",//点赞数

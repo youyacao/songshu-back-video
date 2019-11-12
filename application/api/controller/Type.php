@@ -24,18 +24,19 @@ class Type extends Controller
      * @throws DbException
      */
     public function getType(){
-        if($type1=Cache::get("type"))
+        /*if($type1=Cache::get("type"))
         {
             return success("成功",$type1);
-        }
-        $type1 = Db("type")->where(["level"=>1,"enable"=>1])->select();
+        }*/
+        $type1 = Db("type")->where(["level"=>1,"enable"=>1])->order('sort_id')->select();
         foreach ($type1 as $key=>$item)
         {
-            $type2 = Db("type")->where(["pid"=>$item['id'],"enable"=>1])->select();
+            $type2 = Db("type")->where(["pid"=>$item['id'],"enable"=>1])->order('sort_id')->select();
             $type1[$key]['sub_type']=$type2?$type2:[];
         }
-        Cache::set("type",$type1);
-        return success("成功",$type1,300);
+
+//        Cache::set("type",$type1,60);
+        return success("成功",$type1);
     }
 
     /**

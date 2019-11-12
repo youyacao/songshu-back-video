@@ -98,6 +98,18 @@ class User extends Controller
         }
         return error("登录失败");
     }
+
+    /**
+     * Notes: 用户根据Token验证身份并登录
+     * User: BigNiu
+     * Date: 2019/10/30
+     * Time: 9:56
+     * @return Json
+     * @throws DataNotFoundException
+     * @throws DbException
+     * @throws ModelNotFoundException
+     * @throws Exception
+     */
     public function getAuth(){
         $token = input("token",null);
         if(!$token){
@@ -106,7 +118,16 @@ class User extends Controller
         $user = Db("user")->where(["token"=>$token])->find();
         if($user){
             session("user",$user);
+            $vids = Db("video")->where(['uid'=>$user['id']])->field("id")->select();
+            $ids = array_column($vids,"id");
+            $skr_count = Db("skr")->whereIn('vid',$ids)->count('id');//获赞数
+            $fans_count = Db("follow")->where(['follow_id'=>$user['id']])->count('id');
+            $follow_count = Db("follow")->where(['uid'=>$user['id']])->count('id');
             unset($user['password']);
+            $user['skr_count']=$skr_count;//获赞数
+            $user['fans_count']=$fans_count;// 粉丝数
+            $user['follow_count']=$follow_count;//关注数
+            u_log("用户".$user['name']."(".$user['id'].")通过Token验证登录成功");
             return success("验证成功",$user);
         }
         return error("验证失败");

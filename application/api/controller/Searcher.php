@@ -41,6 +41,7 @@ class Searcher
             ->join("follow f1","f1.follow_id=u.id and f1.uid = '".$user['id']."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
             ->group("u.id")
             ->whereLike("u.name", '%'.$text.'%', "or")
+            ->whereLike("u.custom_id", '%'.$text.'%', "or")
             ->whereLike("u.phone", $text, "or")
             ->field([
                 'u.id',//用户id

@@ -49,6 +49,25 @@ function success($msg = null, $data = null)
 }
 
 /**
+ * Notes: 错误输出<br>
+ * User:bigniu <br>
+ * Date:2019-06-17 <br>
+ * Time:17:04:04 <br>
+ * @param null $msg
+ * @param int $code
+ * @return \think\response\Json <br>
+ */
+function error($msg = null, $code = 1)
+{
+    $return = array("msg" => $msg, "code" => $code);
+
+    if ($msg == null) {
+        $return['msg'] = "error";
+    }
+    return json($return, 200);
+}
+
+/**
  * Notes: 加密用户登录密码<br>
  * User:bigniu <br>
  * Date:2019-06-27 <br>
@@ -68,25 +87,6 @@ function pass($pass = "")
 function adminpass($pass = "")
 {
     return md5(md5($pass) . "bigniuadmin");
-}
-
-/**
- * Notes: 错误输出<br>
- * User:bigniu <br>
- * Date:2019-06-17 <br>
- * Time:17:04:04 <br>
- * @param null $msg
- * @param int $code
- * @return \think\response\Json <br>
- */
-function error($msg = null, $code = 1)
-{
-    $return = array("msg" => $msg, "code" => $code);
-
-    if ($msg == null) {
-        $return['msg'] = "error";
-    }
-    return json($return, 200);
 }
 
 /**
@@ -313,4 +313,10 @@ function NginxGetAllHeaders(){//获取请求头
         }
     }
     return $headers;
+}
+function isLocal(){
+    if(getLocalIp()=='192.168.0.125'||getLocalIp()=='127.0.0.1'||getLocalIp()=='localhost'){
+        return true;
+    }
+    return false;
 }
