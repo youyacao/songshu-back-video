@@ -121,7 +121,7 @@ class Comment extends Controller
         $uid = $user['id'];//用户ID
         $pid = input("pid/i");//上级评论ID
         $content = input("content");//评论内容
-        $video = Db("video")->where(["id" => $vid,"state"=>0])->find();
+        $video = Db("video")->where(["id" => $vid])->find();
         if (!$video)
         {
             u_log("用户".$user['name']."(".$user['id'].")发送评论(".$content.")失败","error");
