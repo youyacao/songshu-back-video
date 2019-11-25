@@ -62,13 +62,13 @@ class Video
 
             $list = Db("video v")
                 ->where(['v.state'=>1])
-                ->join("skr s", "v.id=s.vid and '" . $user['id'] . "'=s.uid", "left")//视频ID等于点赞视频ID并且当前用户ID登录点赞用户ID
-                ->join("skr s1", "v.id=s1.vid", "left")//视频ID等于点赞视频ID
+                ->join("skr s", " v.id=s.vid and s.type=0 and '" . $user['id'] . "'=s.uid", "left")//视频ID等于点赞视频ID并且当前用户ID登录点赞用户ID
+                ->join("skr s1",  "v.id=s1.vid and s1.type=0", "left")//视频ID等于点赞视频ID
                 ->join("user u", "v.uid=u.id", "left")//视频用户ID等于用户ID
                 ->join("follow f","v.uid=f.follow_id and f.uid = '".$user['id']."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
                 ->join("collection co","v.id=co.vid and co.uid = '".$user['id']."'","left")//视频ID等于收藏的视频ID并且收藏的用户ID为当前用户ID
                 ->join("view_history h", "v.id=h.vid", "left")//视频ID等于播放历史视频ID
-                ->join("comment c", "v.id=c.vid and c.pid=0", "left")//视频ID等于评论视频ID并且评论上级ID未0，即一级评论
+                ->join("comment c", "v.id=c.vid and c.pid=0 and c.type=0", "left")//视频ID等于评论视频ID并且评论上级ID未0，即一级评论
                 ->page($page, 20)
                 ->group("v.id")
                 ->field([
@@ -100,13 +100,13 @@ class Video
             $list = Db("video v")
                 ->where(['v.state'=>1])
                 ->whereNotIn("v.id", $ids)
-                ->join("skr s", "v.id=s.vid and '" . $user['id'] . "'=s.uid", "left")
-                ->join("skr s1", "v.id=s1.vid", "left")
+                ->join("skr s", " v.id=s.vid and s.type=0 and '" . $user['id'] . "'=s.uid", "left")
+                ->join("skr s1",  "v.id=s1.vid and s1.type=0", "left")
                 ->join("user u", "v.uid=u.id", "left")
                 ->join("follow f","v.uid=f.follow_id and f.uid = '".$user['id']."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
                 ->join("collection co","v.id=co.vid and co.uid = '".$user['id']."'","left")//视频ID等于收藏的视频ID并且收藏的用户ID为当前用户ID
                 ->join("view_history h", "v.id=h.vid", "left")
-                ->join("comment c", "v.id=c.vid and c.pid=0", "left")
+                ->join("comment c", "v.id=c.vid and c.pid=0 and c.type=0", "left")
                 ->order("skr desc")
                 ->page($page, 20)
                 ->group("v.id")
@@ -163,13 +163,13 @@ class Video
         $list = Db("video v")
             ->whereIn("v.uid", $ids)
             ->where(['v.state'=>1])
-            ->join("skr s", "v.id=s.vid and '" . $user['id'] . "'=s.uid", "left")
-            ->join("skr s1", "v.id=s1.vid", "left")
+            ->join("skr s", " v.id=s.vid and s.type=0 and '" . $user['id'] . "'=s.uid", "left")
+            ->join("skr s1",  "v.id=s1.vid and s1.type=0", "left")
             ->join("user u", "v.uid=u.id", "left")
             ->join("follow f","v.uid=f.follow_id and f.uid = '".$user['id']."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
             ->join("collection co","v.id=co.vid and co.uid = '".$user['id']."'","left")//视频ID等于收藏的视频ID并且收藏的用户ID为当前用户ID
             ->join("view_history h", "v.id=h.vid", "left")
-            ->join("comment c", "v.id=c.vid and c.pid=0", "left")
+            ->join("comment c", "v.id=c.vid and c.pid=0 and c.type=0", "left")
             ->order("skr desc,create_time")
             ->page($page, 20)
             ->group("v.id")
@@ -229,13 +229,13 @@ class Video
         $list = Db("video v")
             ->where("v.type", $typeid)
             ->where(['v.state'=>1])
-            ->join("skr s", "v.id=s.vid and '" . $user['id'] . "'=s.uid", "left")
-            ->join("skr s1", "v.id=s1.vid", "left")
+            ->join("skr s", " v.id=s.vid and s.type=0 and '" . $user['id'] . "'=s.uid", "left")
+            ->join("skr s1",  "v.id=s1.vid and s1.type=0", "left")
             ->join("user u", "v.uid=u.id", "left")
             ->join("follow f","v.uid=f.follow_id and f.uid = '".$user['id']."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
             ->join("collection co","v.id=co.vid and co.uid = '".$user['id']."'","left")//视频ID等于收藏的视频ID并且收藏的用户ID为当前用户ID
             ->join("view_history h", "v.id=h.vid", "left")
-            ->join("comment c", "v.id=c.vid and c.pid=0", "left")
+            ->join("comment c", "v.id=c.vid and c.pid=0 and c.type=0", "left")
             ->order("create_time desc")
             ->page($page, 20)
             ->group("v.id")
@@ -282,13 +282,13 @@ class Video
         $list = Db("video v")
             ->where(['v.uid' => $uid])
             ->where($where)
-            ->join("skr s", "v.id=s.vid and '" .$uid . "'=s.uid", "left")//视频ID等于点赞视频ID并且当前用户ID登录点赞用户ID
-            ->join("skr s1", "v.id=s1.vid", "left")//视频ID等于点赞视频ID
+            ->join("skr s", " v.id=s.vid and s.type=0 and '" .$uid . "'=s.uid", "left")//视频ID等于点赞视频ID并且当前用户ID登录点赞用户ID
+            ->join("skr s1",  "v.id=s1.vid and s1.type=0", "left")//视频ID等于点赞视频ID
             ->join("user u", "v.uid=u.id", "left")//视频用户ID等于用户ID
             ->join("follow f","v.uid=f.follow_id and f.uid = '".$uid."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
             ->join("collection co","v.id=co.vid and co.uid = '".$uid."'","left")//视频ID等于收藏的视频ID并且收藏的用户ID为当前用户ID
             ->join("view_history h", "v.id=h.vid", "left")//视频ID等于播放历史视频ID
-            ->join("comment c", "v.id=c.vid and c.pid=0", "left")//视频ID等于评论视频ID并且评论上级ID未0，即一级评论
+            ->join("comment c", "v.id=c.vid and c.pid=0 and c.type=0", "left")//视频ID等于评论视频ID并且评论上级ID未0，即一级评论
             ->page($page, 20)
             ->group("v.id")
             ->field([
@@ -328,12 +328,12 @@ class Video
             ->where(['s.uid' => $uid])
             ->where(['v.state'=>1])
             ->join("video v", "s.vid = v.id", "left")
-            ->join("skr s1", "v.id=s1.vid", "left")//视频ID等于点赞视频ID
+            ->join("skr s1",  "v.id=s1.vid and s1.type=0", "left")//视频ID等于点赞视频ID
             ->join("user u", "v.uid=u.id", "left")//视频用户ID等于用户ID
             ->join("follow f","v.uid=f.follow_id and f.uid = '".$uid."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
             ->join("collection co","v.id=co.vid and co.uid = '".$uid."'","left")//视频ID等于收藏的视频ID并且收藏的用户ID为当前用户ID
             ->join("view_history h", "v.id=h.vid", "left")//视频ID等于播放历史视频ID
-            ->join("comment c", "v.id=c.vid and c.pid=0", "left")//视频ID等于评论视频ID并且评论上级ID未0，即一级评论
+            ->join("comment c", "v.id=c.vid and c.pid=0 and c.type=0", "left")//视频ID等于评论视频ID并且评论上级ID未0，即一级评论
             ->page($page, 20)
             ->group("v.id")
             ->field([
@@ -512,12 +512,12 @@ class Video
             ->where(['v.state'=>1])
             ->whereNotNull("v.id")//视频未被删除
             ->join("video v", "co.vid=v.id", "left")//收藏ID等于视频的ID
-            ->join("skr s", "v.id=s.vid and " . $user['id'] . "=s.uid", "left")//视频ID等于点赞视频ID并且当前用户ID登录点赞用户ID
-            ->join("skr s1", "v.id=s1.vid", "left")//视频ID等于点赞视频ID
+            ->join("skr s", " v.id=s.vid and s.type=0 and " . $user['id'] . "=s.uid", "left")//视频ID等于点赞视频ID并且当前用户ID登录点赞用户ID
+            ->join("skr s1",  "v.id=s1.vid and s1.type=0", "left")//视频ID等于点赞视频ID
             ->join("user u", "v.uid=u.id", "left")//视频用户ID等于用户ID
             ->join("follow f","v.uid=f.follow_id and f.uid = '".$user['id']."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
             ->join("view_history h", "v.id=h.vid", "left")//视频ID等于播放历史视频ID
-            ->join("comment c", "v.id=c.vid and c.pid=0", "left")//视频ID等于评论视频ID并且评论上级ID未0，即一级评论
+            ->join("comment c", "v.id=c.vid and c.pid=0 and c.type=0", "left")//视频ID等于评论视频ID并且评论上级ID未0，即一级评论
             ->group("v.id")
             ->field([
                 "v.id",//视频ID

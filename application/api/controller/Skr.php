@@ -20,51 +20,71 @@ class Skr extends Controller
         if (!$user) {
             return error("未登录");
         }
-        $type = input("type/i")==0?0:1;//0为取消点赞，1为点赞
+        $type = input("type/i",0);
+        $uSkr = input("skr/i")==0?0:1;//0为取消点赞，1为点赞
         $vid = input("vid/i");
         $uid = $user['id'];
-        $video = Db("video")->where(['id'=>$vid])->find();
-        if(!$video)
-        {
-            u_log("用户".$user['name']."(".$user['id'].")点赞视频<".$video['title']."(".$vid.")>失败，视频已删除");
-            return error("点赞失败，视频已删除");
+        switch ($type){
+            case 0:
+                $video = Db("video")->where(['id'=>$vid])->find();
+                if(!$video)
+                {
+                    u_log("用户".$user['name']."(".$user['id'].")点赞".typeToName($type)."<".$video['title']."(".$vid.")>失败，".typeToName($type)."已删除");
+                    return error("点赞失败，".typeToName($type)."已删除");
+                }
+                break;
+            case 1:
+                $text_image = Db("text_image")->where(['id'=>$vid])->find();
+                if(!$text_image)
+                {
+                    u_log("用户".$user['name']."(".$user['id'].")点赞".typeToName($type)."<".$text_image['title']."(".$vid.")>失败，".typeToName($type)."已删除");
+                    return error("点赞失败，".typeToName($type)."已删除");
+                }
+                break;
         }
-        $skr = Db("skr")->where(['uid'=>$uid,'vid'=>$vid])->find();
+
+        $skr = Db("skr")->where(['uid'=>$uid,'vid'=>$vid,'type'=>$type])->find();
+        $negative = Db("negative")->where(['uid'=>$uid,'negative'=>1,'vid'=>$vid,'type'=>$type])->find();
+        if($negative){
+            return error("点踩后就不能反悔哦");
+        }
+
         if($skr)
         {
-            if($skr['skr']==$type)
+            if($skr['skr']==$uSkr)
             {
 
-                if($type==0)
+                if($uSkr==0)
                 {
-                    u_log("用户".$user['name']."(".$user['id'].")取消点赞视频<".$video['title']."(".$vid.")>成功");
+                    u_log("用户".$user['name']."(".$user['id'].")取消点赞".typeToName($type)."(".$vid.")成功");
                     return success("取消点赞成功");
                 }
-                u_log("用户".$user['name']."(".$user['id'].")点赞视频<".$video['title']."(".$vid.")>成功");
+                u_log("用户".$user['name']."(".$user['id'].")点赞".typeToName($type)."(".$vid.")成功");
                 return success("点赞成功");
             }
             //如果点赞记录已存在，直接修改
-            $id = Db("skr")->where(['uid'=>$uid,'vid'=>$vid])->update(['skr'=>$type,'update_time'=>TIME]);
+            $id = Db("skr")->where(['uid'=>$uid,'vid'=>$vid,'type'=>$type])->update(['skr'=>$uSkr,'update_time'=>TIME]);
         }else{
             $data = [
                 'uid'=>$uid,
                 'vid'=>$vid,
-                'skr'=>$type,
-                'create_time'=>TIME
+                'skr'=>$uSkr,
+                'create_time'=>TIME,
+                'type'=>$type
             ];
             $id = Db("skr")->insertGetId($data);
         }
         if($id)
         {
-            if($type==0)
+            if($uSkr==0)
             {
-                u_log("用户".$user['name']."(".$user['id'].")取消点赞视频<".$video['title']."(".$vid.")>成功");
+                u_log("用户".$user['name']."(".$user['id'].")取消点赞".typeToName($type)."(".$vid.")>成功");
                 return success("取消点赞成功");
             }
-            u_log("用户".$user['name']."(".$user['id'].")点赞视频<".$video['title']."(".$vid.")>成功");
+            u_log("用户".$user['name']."(".$user['id'].")点赞".typeToName($type)."(".$vid.")>成功");
             return success("点赞成功");
         }
-        if($type==0)
+        if($uSkr==0)
         {
             u_log("用户".$user['name']."(".$user['id'].")取消点赞视频<".$video['title']."(".$vid.")>失败");
             return error("取消点赞失败");

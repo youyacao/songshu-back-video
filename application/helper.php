@@ -1,5 +1,6 @@
 <?php
 
+use think\Image;
 use think\Request;
 
 /**
@@ -319,4 +320,17 @@ function isLocal(){
         return true;
     }
     return false;
+}
+function typeToName($type){
+    $TYPE = array(0=>"视频",1=>"图文");
+    return $TYPE[$type];
+}
+function mkdirs($path){
+    if(!is_dir($path)){
+        mkdirs(dirname($path));
+        if(!mkdir($path, 0777)){
+            return false;
+        }
+    }
+    return true;
 }

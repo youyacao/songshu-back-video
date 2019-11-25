@@ -16,7 +16,7 @@ class Sms
         //获取数据库是否有数据
         $smsData = Db("sms")->where(['phone' => $phone])->find();
         $sms = new Sms();
-        $yzmcontent = "【优雅草】您的验证码是：" . $code . "，请在10分钟内输入。请勿告诉其他人。";
+        $yzmcontent = str_replace("{验证码}",$code,config("sms_template"));
         $apikey = config("sms_apikey");
         $data = array('content' => urlencode($yzmcontent), 'apikey' => $apikey, 'mobile' => $phone);
 

@@ -11,6 +11,8 @@ use Qiniu\Storage\UploadManager;
 use think\Config;
 use think\Controller;
 use think\exception\ErrorException;
+use think\File;
+use think\Image;
 
 class Api extends Controller
 {
@@ -28,7 +30,7 @@ class Api extends Controller
     {
         //dump(Config::has('use_qiniu'));exit;
         //如果开启使用七牛云上传
-        if (Config::get("use_qiniu")) {
+        if (config("use_qiniu") == '1') {
             return $this->upload_qiniu();
         }
         $type = input("type");
@@ -91,13 +93,13 @@ class Api extends Controller
             $key = substr(md5($file->getRealPath()), 0, 5) . date('YmdHis') . rand(0, 9999) . '.' . $ext;
             require_once APP_PATH . '/../vendor/qiniu/autoload.php';
             // 需要填写你的 Access Key 和 Secret Key
-            $accessKey = Config::get('ACCESSKEY');
-            $secretKey = Config::get('SECRETKEY');
+            $accessKey = config('accesskey');
+            $secretKey = config('secretkey');
             // 构建鉴权对象
             $auth = new Auth($accessKey, $secretKey);
             // 要上传的空间
-            $bucket = Config::get('BUCKET');
-            $domain = Config::get('DOMAIN');
+            $bucket = config('bucket');
+            $domain = config('domain');
             $token = $auth->uploadToken($bucket);
             // 初始化 UploadManager 对象并进行文件的上传
             $uploadMgr = new UploadManager();
@@ -106,7 +108,7 @@ class Api extends Controller
             if ($err !== null) {
                 return error($err);
             } else {
-                $url = "http://" . $domain . "/" . $ret['key'];
+                $url = $domain . $ret['key'];
                 if ($type == 'video') {
                     $data = [
                         'url' => $url,
@@ -120,7 +122,7 @@ class Api extends Controller
                     return success("上传成功", $data);
                 }
                 //返回图片的完整URL
-                return success("上传成功",$data );
+                return success("上传成功", $data);
             }
         }
     }
@@ -197,6 +199,61 @@ class Api extends Controller
     }
 
     /**
+     * Notes:获取系统配置
+     * User: BigNiu
+     * Date: 2019/11/19
+     * Time: 10:55
+     * @return \think\response\Json
+     */
+    public function config()
+    {
+
+        $publicConfig = [
+            'use_qiniu',
+            'domain'
+        ];
+        $config = Db("config")->whereIn("name", $publicConfig)->field("name,value")->select();
+        $res = [];
+        foreach ($config as $key => $value) {
+            $res[$value['name']] = $value['value'];
+        }
+        return success("获取成功", $res);
+    }
+
+    /**
+     * Notes:获取七牛云Token
+     * User: BigNiu
+     * Date: 2019/11/19
+     * Time: 10:55
+     * @return \think\response\Json
+     * @throws \think\Exception
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\ModelNotFoundException
+     * @throws \think\exception\DbException
+     * @throws \think\exception\PDOException
+     */
+    public function getQiNiuToken()
+    {
+        //判断是否开启七牛云
+        if (config("use_qiniu") == 0) {
+            return error("未开启七牛云存储");
+        }
+        /*//上传策略
+        $policyFields =[
+            'mimeLimit'=>'image/jpeg;image/png',
+        ];
+        $expires = 3600;*/
+        $accessKey = config('accesskey');//获取七牛AK
+        $secretKey = config('secretkey');//获取七牛SK
+        require_once APP_PATH . '/../vendor/qiniu/autoload.php';
+        $auth = new Auth($accessKey, $secretKey);
+        $bucket = config('bucket');//设置存储空间
+        $token = $auth->uploadToken($bucket);
+//        $token = $auth->uploadToken($bucket,null,$expires,$policyFields);//若需要限制上传文件类型，则在生成token时添加上传策略即可
+        return success("获取成功", $token);
+    }
+
+    /**
      * Notes:测试ffmpeg截图
      * User: BigNiu
      * Date: 2019/10/8
@@ -264,17 +321,66 @@ class Api extends Controller
         return error("发送失败");
     }
 
-    public function updateUserAvater()
+    /*    public function updateUserAvater()
+        {
+            $userList = Db("user")->select();
+            $dir = scandir("static\avatar");
+            foreach ($userList as $key => $value) {
+                do {
+                    $name = $dir[intval(rand(0, sizeof($dir)))];
+                } while ($name == '.' || $name == "..");
+                Db("user")->where(['id' => $value['id']])->update(['head_img' => "static/avatar/" . $name]);
+                echo "更新用户" . $value['phone'] . "头像为" . "static/avatar/" . $name . "成功<br/>";
+            }
+        }*/
+    public function img($scale)
     {
-        $userList = Db("user")->select();
-        $dir = scandir("static\avatar");
-        foreach ($userList as $key => $value) {
-            do {
-                $name = $dir[intval(rand(0, sizeof($dir)))];
-            } while ($name == '.' || $name == "..");
-            Db("user")->where(['id' => $value['id']])->update(['head_img' => "static/avatar/" . $name]);
-            echo "更新用户" . $value['phone'] . "头像为" . "static/avatar/" . $name . "成功<br/>";
+        ob_clean();
+        $scale = floatval($scale);
+        $url = input("url");
+        //判断需要压缩的文件是否存在
+        if (!file_exists($url)) {
+            header("Content-type: image/png");
+            exit;
         }
+        //如果缩放比例大于10，使用10
+        if ($scale > 10) {
+            $scale = 10;
+        }
+        //如果缩放比例小于1，使用1
+        if ($scale < 1) {
+            $scale = 1;
+        }
+        $file = new File($url);
+        $path = $file->getPath();
+        $ext = $file->getExtension();
+        $type_arr = ['png','jpg','gif'];
+        //文件类型检测
+        if(!in_array($ext,$type_arr)){
+            header("Content-type: image/png");
+            exit;
+        }
+        $fileName = $file->getFilename();
+        $dir = "uploads/thumb/" . $scale."/".$path . "/";
+        //判断保存文件的路径是否存在，不存在就创建
+        if (!is_dir($dir)) {
+            mkdirs($dir);
+        }
+        $image = Image::open($url);
+        $save_path = $dir . $fileName;
+        //判断略缩图文件是否存在，存在直接返回
+        if(is_file($save_path)){
+            header('Content-type:' . $image->mime());
+            echo file_get_contents($save_path);
+        }
+        //获取缩放后的宽高
+        $width = $image->width() / $scale;
+        $height =$image->height() / $scale;
+        //进行缩放并保存到指定文件
+        $image->thumb($width, $height, Image::THUMB_CENTER)->save($save_path);
+        header('Content-type:' . $image->mime());
+        //输出缩放后的文件
+        echo file_get_contents($save_path);
+        exit;
     }
-
 }

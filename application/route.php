@@ -23,6 +23,10 @@ Route::controller('comment','api/comment');
 
 Route::controller('skr','api/skr');
 
+Route::controller('negative','api/negative');
+
+Route::controller('negative_comment','api/negativeComment');
+
 Route::controller('collection','api/collection');
 
 Route::controller('follow','api/follow');
@@ -30,8 +34,10 @@ Route::controller('follow','api/follow');
 Route::controller('search','api/searcher');
 
 Route::controller('advert','api/advert');
+Route::controller('text_image','api/textImage');
 
 Route::controller('captcha','index/index/captcha');
+Route::get('thumb/:scale','api/api/img');
 return [
     '__pattern__' => [
         'name' => '\w+',

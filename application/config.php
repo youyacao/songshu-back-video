@@ -13,12 +13,6 @@ return [
     // +----------------------------------------------------------------------
     // | 应用设置
     // +----------------------------------------------------------------------
-    //七牛云配置
-    'use_qiniu'=>false,
-    'ACCESSKEY' => 'ixqX1Oi2ZpffsfUoJM3vETzF_A9MR57SupV3rE39',//你的accessKey
-    'SECRETKEY' => 'QCgNdPJO-bnkkPNYxvw4rcXExO4Q3wFSl9guD0Jj',//你的secretKey
-    'BUCKET' => 'bigniudouyin',//上传的空间
-    'DOMAIN'=>'pymntdp3k.bkt.clouddn.com',//空间绑定的域名
     // 应用调试模式
     'app_debug'              => true,
     // 应用Trace
