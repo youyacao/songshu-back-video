@@ -541,4 +541,19 @@ class Video
         u_log("用户" . $user['name'] . "(" . $user['id'] . ")查看收藏列表");
         return $collections;
     }
+    public function postDelete(){
+        $user = session("user");
+        if (!$user) {
+            return error("未登录");
+        }
+        $ids = input('ids/a');
+        if(!$ids){
+            return error("删除失败");
+        }
+        $res = Db("video")->where(['uid'=>$user['id']])->whereIn('id',$ids)->delete();
+        if($res){
+            return success("删除成功");
+        }
+        return error("删除失败");
+    }
 }
