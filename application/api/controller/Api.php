@@ -204,13 +204,17 @@ class Api extends Controller
      * Date: 2019/11/19
      * Time: 10:55
      * @return \think\response\Json
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\ModelNotFoundException
+     * @throws \think\exception\DbException
      */
     public function config()
     {
 
         $publicConfig = [
-            'use_qiniu',
-            'domain'
+            'use_qiniu',//是否开启七牛云
+            'domain',//七牛云域名
+            'video_free_time'//免费观看时间
         ];
         $config = Db("config")->whereIn("name", $publicConfig)->field("name,value")->select();
         $res = [];

@@ -147,6 +147,7 @@ class User extends Controller
      */
     public function getUserInfo(){
         $user = session("user");
+
         if (!$user) {
             return error("未登录");
         }
