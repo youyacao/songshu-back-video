@@ -33,6 +33,9 @@ class Api extends Controller
         if (config("use_qiniu") == '1') {
             return $this->upload_qiniu();
         }
+        if (config("use_ftp") == '1') {
+            return $this->upload_ftp();
+        }
         $type = input("type");
         $config = Config::get($type);
         if (!$config) {
@@ -45,6 +48,7 @@ class Api extends Controller
         }
         // 移动到框架应用根目录/public/uploads/ 目录下
         $info = $file->validate(['ext' => $config['ext']])->rule('uniqid')->move(ROOT_PATH . 'public' . DS . 'uploads' . DS . $type);
+
 
         if ($info) {
             $url = 'uploads/' . $type . "/" . str_replace(DS, "/", $info->getSaveName());
@@ -126,7 +130,78 @@ class Api extends Controller
             }
         }
     }
+    /**
+     * Notes: FTP上传模式<br>
+     * User:bigniu <br>
+     * Date:2019-12-29 <br>
+     * Time:23:00:17 <br>
+     * @return \think\response\Json <br>
+     */
+    public function upload_ftp()
+    {
 
+        if (request()->isPost()) {
+            $type = input("type");
+            $config = Config::get($type);
+            if (!$config) {
+                return error("上传类型错误");
+            }
+            // 获取表单上传视频 例如上传了001.mp4
+            $file = request()->file('file');
+            if (!$file) {
+                return error("请选择上传文件");
+            }
+            // 移动到框架应用根目录/public/uploads/ 目录下
+            $info = $file->validate(['ext' => $config['ext']])->rule('uniqid')->move(ROOT_PATH . 'public' . DS . 'uploads' . DS . $type);
+            if ($info) {
+                $config = [
+                    'host' => config("ftp_host"),
+                    'user' =>config("ftp_user"),
+                    'pass' => config("ftp_pass"),
+                    'url'=>config('ftp_url')
+                ];
+                $ftp = new Ftp($config);
+                $result = $ftp->connect();
+
+                if (!$result) {
+                    echo $ftp->get_error_msg();
+                    exit;
+                }
+                $file = request()->file('file');
+                if (!$file) {
+                    return error("请选择上传文件");
+                }
+
+                // 要上传图片的本地路径
+                $filePath = ROOT_PATH . 'public' . DS . 'uploads/' . DS . $type . DS . $info->getSaveName();
+                $local_file = $filePath;
+                $remote_file = date('Y-m') . '/' . getRandStr().".".$info->getExtension();
+                //上传文件
+                if ($ftp->upload($local_file, $remote_file)) {
+                    $remote_url =$config['url'].$remote_file;
+
+                    if ($type == 'video') {
+                        $data = [
+                            'url' =>$remote_url ,
+                            'img' => getImg($remote_url)
+                        ];
+                        return success("上传成功", $data);
+                    } else {
+                        $data = [
+                            'url' => $remote_url
+                        ];
+                        return success("上传成功", $data);
+                    }
+                } else {
+                    return error("上传失败");
+                }
+            }else{
+                // 上传失败获取错误信息
+                return error($file->getError());
+            }
+
+        }
+    }
     /**
      * Notes:检测更新
      * User: BigNiu

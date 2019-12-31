@@ -21,13 +21,13 @@ class User extends Controller
      *  3,第三方登录
      * 微信登录返回数据：
      *     {
-            "access_token": "26_VsXY7jFe0Q68s45mDNdgg15uzZ7iw7V9YVrzHjwi4kPRcHtxWHXx9_bZwtaK-iXBGVjWFEE93EqO_I8cZlGqd_DtrTnesaGbTM1uuGO6T3c",
-            "expires_in": 7200,
-            "refresh_token": "26_1B7iawAH9A2v2JKrUNqCQCI1Dq1qzQneJNA4-JmPzZ1sWt5KVnBwBLD10wnFGt8JPpCWuzp-AMaEdRX7QdaP54BJ2BUv-3yyQ3gzrricevU",
-            "openid": "oRrdQt18I0MOhKLQWpiGXx2qpz70",
-            "scope": "snsapi_userinfo",
-            "unionid": "oU5Yyt3Vc-2Xo0ytSQ4BpjLS8cWY"
-            }
+    "access_token": "26_VsXY7jFe0Q68s45mDNdgg15uzZ7iw7V9YVrzHjwi4kPRcHtxWHXx9_bZwtaK-iXBGVjWFEE93EqO_I8cZlGqd_DtrTnesaGbTM1uuGO6T3c",
+    "expires_in": 7200,
+    "refresh_token": "26_1B7iawAH9A2v2JKrUNqCQCI1Dq1qzQneJNA4-JmPzZ1sWt5KVnBwBLD10wnFGt8JPpCWuzp-AMaEdRX7QdaP54BJ2BUv-3yyQ3gzrricevU",
+    "openid": "oRrdQt18I0MOhKLQWpiGXx2qpz70",
+    "scope": "snsapi_userinfo",
+    "unionid": "oU5Yyt3Vc-2Xo0ytSQ4BpjLS8cWY"
+    }
      * User: BigNiu
      * Date: 2019/10/8
      * Time: 15:58
@@ -51,11 +51,25 @@ class User extends Controller
                     u_log("用户名:".$username."密码:".$password." 登录失败,用户不存在",'error');
                     return error("用户名或密码错误");
                 }
+                //判断是否封号
+                if($user['disable']==1){
+                    //判断封号到期时间是否大于当前时间
+                    if(strtotime(is_null($user['disable_time'])?'00:00:00':$user['disable_time'])>time()){
+                        //还处于封号状态，返回登录失败
+                        return error('该账户已封禁，将于 '.$user['disable_time'].' 解封');
+                    }else{
+                        //处于封禁状态，但是已过封禁时间，更新状态
+                        Db("user")->where(['id'=>$user['id']])->update(['disable'=>0,'disable_time'=>null]);
+                        //
+                    }
+                }
                 if(pass($password)!=$user['password'])
                 {
                     u_log("用户名:".$username."密码:".$password." 登录失败,密码错误",'error');
                     return error("用户名或密码错误");
                 }
+                $token =pass($username.time().getRandStr()).$username;
+                Db("user")->where(['username'=>$username])->update(["token"=>$token]);
                 session("user",$user);
                 unset($user['password']);
                 return success("登录成功",$user);
@@ -64,12 +78,6 @@ class User extends Controller
                 $phone = input("phone/i");//手机号
                 $user = Db("user")->where(['phone'=>$phone])->find();
                 $code = input("code/i");
-                //判断短信验证码是否正确
-                if(!Sms::verifySms($phone,$code))
-                {
-                    u_log("手机用户".$phone."登录失败",'error');
-                    return error("验证码错误");
-                }
                 if(!$user)
                 {
                     //用户不存在，自动注册
@@ -86,6 +94,24 @@ class User extends Controller
                     session("user",$user);
                     return success("注册成功",$user);
                 }
+                //判断是否封号
+                if($user['disable']==1){
+                    //判断封号到期时间是否大于当前时间
+                    if(strtotime(is_null($user['disable_time'])?'00:00:00':$user['disable_time'])>time()){
+                        //还处于封号状态，返回登录失败
+                        return error('该账户已封禁,将于 '.$user['disable_time'].' 解封');
+                    }else{
+                        //处于封禁状态，但是已过封禁时间，更新状态
+                        Db("user")->where(['id'=>$user['id']])->update(['disable'=>0,'disable_time'=>null]);
+                    }
+                }
+                //判断短信验证码是否正确
+                if(!Sms::verifySms($phone,$code))
+                {
+                    u_log("手机用户".$phone."登录失败",'error');
+                    return error("验证码错误");
+                }
+
                 $token = pass($phone.time().getRandStr()).$phone;
                 Db("user")->where(['phone'=>$phone])->update(["token"=>$token]);
                 $user['token']=$token;
@@ -117,6 +143,17 @@ class User extends Controller
         }
         $user = Db("user")->where(["token"=>$token])->find();
         if($user){
+            //判断是否封号
+            if($user['disable']==1){
+                //判断封号到期时间是否大于当前时间
+                if(strtotime(is_null($user['disable_time'])?'00:00:00':$user['disable_time'])>time()){
+                    //还处于封号状态，返回登录失败
+                    return error('该账户已封禁,将于 '.$user['disable_time'].' 解封');
+                }else{
+                    //处于封禁状态，但是已过封禁时间，更新状态
+                    Db("user")->where(['id'=>$user['id']])->update(['disable'=>0,'disable_time'=>null]);
+                }
+            }
             session("user",$user);
             $vids = Db("video")->where(['uid'=>$user['id']])->field("id")->select();
             $ids = array_column($vids,"id");
@@ -151,6 +188,7 @@ class User extends Controller
         if (!$user) {
             return error("未登录");
         }
+
         $user = Db("user")
             ->where(['id'=>$user['id']])
             ->field([
@@ -163,9 +201,25 @@ class User extends Controller
                 'create_time',
                 "ifnull(head_img,'static/image/head.png') head_img",
                 "custom_id",
-                "token"
+                "token",
+                'disable',
+                'disable_time'
             ])
             ->find();
+        if (!$user) {
+            return error("未登录");
+        }
+        //判断是否封号
+        if($user['disable']==1){
+            //判断封号到期时间是否大于当前时间
+            if(strtotime(is_null($user['disable_time'])?'00:00:00':$user['disable_time'])>time()){
+                //还处于封号状态，返回登录失败
+                return error('该账户已封禁,将于 '.$user['disable_time'].' 解封');
+            }else{
+                //处于封禁状态，但是已过封禁时间，更新状态
+                Db("user")->where(['id'=>$user['id']])->update(['disable'=>0,'disable_time'=>null]);
+            }
+        }
         $vids = Db("video")->where(['uid'=>$user['id']])->field("id")->select();
         $ids = array_column($vids,"id");
         $skr_count = Db("skr")->whereIn('vid',$ids)->count('id');//获赞数
@@ -271,7 +325,7 @@ class User extends Controller
             //如果是修改密码请求
             //获取最新用户信息
             $user = Db("user")->where(['id'=>$user['id']])->find();
-            //判断原来是否有设置密码，有设置密码并且有传老密码可通过原密码修改
+            /*//判断原来是否有设置密码，有设置密码并且有传老密码可通过原密码修改
             if($user['password']&&$old_password)
             {
                 if($user['password']!=pass($old_password))
@@ -286,7 +340,8 @@ class User extends Controller
                 {
                     $data['password']=pass($password);
                 }
-            }
+            }*/
+            $data['password']=pass($password);
 
         }
         $data = array_filter($data);
@@ -381,6 +436,29 @@ class User extends Controller
         }
         session("user",null);
         return success("退出登录成功");
+    }
+    public function postRegister(){
+        //用户不存在，自动注册
+        $username = input('username');
+        $password = input('password');
+        $user = Db("user")->where(['username'=>$username])->find();
+        if($user){
+            return error("该用户名已存在，请重新输入");
+        }
+        $user = [];
+        $user = [
+            "username"=>$username,
+            'password'=>pass($password),
+            "create_time"=>date("Y-m-d H:i:s",time()),
+            "head_img"=>'static/image/head.png',
+            "name"=>$username,
+            "token"=>pass($username.time().getRandStr()).$username
+        ];
+        $id = Db("user")->insertGetId($user);
+        u_log("用户".$username."注册成功",'login');
+        $user['id']=$id;
+        session("user",$user);
+        return success("注册成功",$user);
     }
 
 }
