@@ -289,7 +289,8 @@ class Api extends Controller
         $publicConfig = [
             'use_qiniu',//是否开启七牛云
             'domain',//七牛云域名
-            'video_free_time'//免费观看时间
+            'video_free_time',//免费观看时间
+            'advert_count'//广告刷到的频率
         ];
         $config = Db("config")->whereIn("name", $publicConfig)->field("name,value")->select();
         $res = [];
@@ -462,4 +463,52 @@ class Api extends Controller
         echo file_get_contents($save_path);
         exit;
     }
+    public function test_qq(){
+        Vendor('qq.qqConnectAPI');
+        $qc = new \QC();
+/*        $access_token = $qc->qq_callback();
+
+        $open_id = $qc->get_openid();*/
+        $qc = new \QC('2A30CC0AD30B78A477DD0B1AE732006A','9EB708E9B66F11DB749E3ACCB6EE93B1');
+        $user_info = $qc->get_user_info();
+        echo json_encode($user_info);exit;
+       // $user = D('member')->where(array('openid'=>$open_id))->find();//查询用户openid
+
+
+        //此处是当用户进行QQ登录授权之后还需要进行手机号的绑定！如果不需要可直接删除此段进行
+        if (!$user) {
+            session('openid',$open_id);
+            $this->assign('user_info',$user_info);
+            $this->display();
+            exit;
+        }else{
+            //下方为已经登记过的openID的记录
+            if ($user['is_lock']) {
+                $this->error('用户被锁定！', '', array('input' => ''));
+            }
+            //更新数据库的参数
+            $data = array('id' => $user['id'], //保存时会自动为此ID的更新
+                'login_time'       => date('Y-m-d H:i:s'),
+                'login_ip'         => get_client_ip(),
+                'login_num'        => $user['login_num'] + 1,
+            );
+            //更新数据库
+            M('member')->save($data);
+            $uf = $request . '.' . md5($data['nickname']) . '.' . get_random(6); //检测因子
+            session('uid', $user['id']);
+            set_cookie(array('name' => 'uid', 'value' => $user['id']));
+            set_cookie(array('name' => 'nickname', 'value' => $user['nickname']));
+            set_cookie(array('name' => 'group_id', 'value' => $user['group_id'])); //20140801
+            set_cookie(array('name' => 'login_time', 'value' => $user['login_time']));
+            set_cookie(array('name' => 'login_ip', 'value' => $user['login_ip']));
+            set_cookie(array('name' => 'status', 'value' => $user['status'])); //激活状态
+            set_cookie(array('name' => 'verifytime', 'value' => time())); //激活状态
+            set_cookie(array('name' => 'uf', 'value' => $uf)); //登录标识
+            //因为前段是弹出窗口进行授权的。所以这里要执行JS的代码进行关闭窗口并刷新父窗口
+            echo '<script>opener.location.reload(); window.close();</script>';
+            exit;
+        }
+    }
+
+
 }

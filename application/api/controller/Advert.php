@@ -28,9 +28,12 @@ class Advert
                 $advert2 = Db("advert")->where(['type'=>4])->where($where)->order("view_count")->limit(4)
                     ->field(['id','name','type','img','open_type','ad_url','title'])->select();
                 Db("advert")->where(['type'=>4])->where($where)->order("view_count")->limit(4)->inc("view_count")->update();
+                $advert3 = Db("advert")->where(['type'=>2])->where($where)->order("view_count")->limit(4)
+                    ->field(['id','name','type','img','url','open_type','ad_url','title'])->select();
                 $data =[
                     'home'=>$advert1,
-                    "page"=>$advert2
+                    "page"=>$advert2,
+                    "video"=>$advert3,
                 ];
                 return success("获取成功",$data);
                 break;

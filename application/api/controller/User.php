@@ -120,6 +120,49 @@ class User extends Controller
                 u_log("手机用户".$phone."登录成功",'login');
                 return success("登录成功",$user);
                 break;
+            case "qq":
+                //QQ登录
+                $open_id = input("openid");
+                $access_token = input('access_token');
+                if(!$open_id||!$access_token){
+                    return error("登录失败");
+                }
+                Vendor('qq.qqConnectAPI');
+                $qc = new \QC($access_token,$open_id);
+                $user_info = $qc->get_user_info();
+
+                $user = Db("user")->where(['qq_openid'=>$open_id])->find();
+                //用户不存在，新增用户
+                if(!$user){
+                    $user = [
+                        "qq_openid"=>$open_id,
+                        "create_time"=>date("Y-m-d H:i:s",time()),
+                        "head_img"=>$user_info['figureurl_qq'],
+                        "name"=>$user_info['nickname'],
+                        "username"=>$user_info['nickname'],
+                        "token"=>pass($open_id.time().getRandStr()).$open_id
+                    ];
+                    $id = Db("user")->insertGetId($user);
+                    u_log("QQ用户".$user_info['nickname']."注册成功",'login');
+                    $user['id']=$id;
+                    session("user",$user);
+                    return success("注册成功",$user);
+                }else{
+                    //用户已存在，更新用户信息
+                    $update = [
+                        "head_img"=>$user_info['figureurl_qq'],
+                        "name"=>$user_info['nickname'],
+                        "username"=>$user_info['nickname'],
+                        "token"=>pass($open_id.time().getRandStr()).$open_id
+                    ];
+                    $res = Db("user")->where(['qq_openid'=>$open_id])->update($update);
+                    $user = Db("user")->where(['id'=>$user['id']])->find();
+                    u_log("QQ用户".$user_info['nickname']."登录成功",'login');
+                    session("user",$user);
+                    return success("登录成功",$user);
+
+                }
+                break;
 
         }
         return error("登录失败");
