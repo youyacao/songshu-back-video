@@ -130,6 +130,7 @@ class Api extends Controller
             }
         }
     }
+
     /**
      * Notes: FTP上传模式<br>
      * User:bigniu <br>
@@ -156,9 +157,9 @@ class Api extends Controller
             if ($info) {
                 $config = [
                     'host' => config("ftp_host"),
-                    'user' =>config("ftp_user"),
+                    'user' => config("ftp_user"),
                     'pass' => config("ftp_pass"),
-                    'url'=>config('ftp_url')
+                    'url' => config('ftp_url')
                 ];
                 $ftp = new Ftp($config);
                 $result = $ftp->connect();
@@ -175,14 +176,14 @@ class Api extends Controller
                 // 要上传图片的本地路径
                 $filePath = ROOT_PATH . 'public' . DS . 'uploads/' . DS . $type . DS . $info->getSaveName();
                 $local_file = $filePath;
-                $remote_file = date('Y-m') . '/' . getRandStr().".".$info->getExtension();
+                $remote_file = date('Y-m') . '/' . getRandStr() . "." . $info->getExtension();
                 //上传文件
                 if ($ftp->upload($local_file, $remote_file)) {
-                    $remote_url =$config['url'].$remote_file;
+                    $remote_url = $config['url'] . $remote_file;
 
                     if ($type == 'video') {
                         $data = [
-                            'url' =>$remote_url ,
+                            'url' => $remote_url,
                             'img' => getImg($remote_url)
                         ];
                         return success("上传成功", $data);
@@ -195,13 +196,14 @@ class Api extends Controller
                 } else {
                     return error("上传失败");
                 }
-            }else{
+            } else {
                 // 上传失败获取错误信息
                 return error($file->getError());
             }
 
         }
     }
+
     /**
      * Notes:检测更新
      * User: BigNiu
@@ -290,7 +292,8 @@ class Api extends Controller
             'use_qiniu',//是否开启七牛云
             'domain',//七牛云域名
             'video_free_time',//免费观看时间
-            'advert_count'//广告刷到的频率
+            'advert_count',//广告刷到的频率
+            'share_url',//分享地址
         ];
         $config = Db("config")->whereIn("name", $publicConfig)->field("name,value")->select();
         $res = [];
@@ -434,14 +437,14 @@ class Api extends Controller
         $file = new File($url);
         $path = $file->getPath();
         $ext = $file->getExtension();
-        $type_arr = ['png','jpg','gif'];
+        $type_arr = ['png', 'jpg', 'gif'];
         //文件类型检测
-        if(!in_array($ext,$type_arr)){
+        if (!in_array($ext, $type_arr)) {
             header("Content-type: image/png");
             exit;
         }
         $fileName = $file->getFilename();
-        $dir = "uploads/thumb/" . $scale."/".$path . "/";
+        $dir = "uploads/thumb/" . $scale . "/" . $path . "/";
         //判断保存文件的路径是否存在，不存在就创建
         if (!is_dir($dir)) {
             mkdirs($dir);
@@ -449,13 +452,13 @@ class Api extends Controller
         $image = Image::open($url);
         $save_path = $dir . $fileName;
         //判断略缩图文件是否存在，存在直接返回
-        if(is_file($save_path)){
+        if (is_file($save_path)) {
             header('Content-type:' . $image->mime());
             echo file_get_contents($save_path);
         }
         //获取缩放后的宽高
         $width = $image->width() / $scale;
-        $height =$image->height() / $scale;
+        $height = $image->height() / $scale;
         //进行缩放并保存到指定文件
         $image->thumb($width, $height, Image::THUMB_CENTER)->save($save_path);
         header('Content-type:' . $image->mime());
@@ -463,34 +466,37 @@ class Api extends Controller
         echo file_get_contents($save_path);
         exit;
     }
-    public function test_qq(){
+
+    public function test_qq()
+    {
         Vendor('qq.qqConnectAPI');
         $qc = new \QC();
-/*        $access_token = $qc->qq_callback();
+        /*        $access_token = $qc->qq_callback();
 
-        $open_id = $qc->get_openid();*/
-        $qc = new \QC('2A30CC0AD30B78A477DD0B1AE732006A','9EB708E9B66F11DB749E3ACCB6EE93B1');
+                $open_id = $qc->get_openid();*/
+        $qc = new \QC('2A30CC0AD30B78A477DD0B1AE732006A', '9EB708E9B66F11DB749E3ACCB6EE93B1');
         $user_info = $qc->get_user_info();
-        echo json_encode($user_info);exit;
-       // $user = D('member')->where(array('openid'=>$open_id))->find();//查询用户openid
+        echo json_encode($user_info);
+        exit;
+        // $user = D('member')->where(array('openid'=>$open_id))->find();//查询用户openid
 
 
         //此处是当用户进行QQ登录授权之后还需要进行手机号的绑定！如果不需要可直接删除此段进行
         if (!$user) {
-            session('openid',$open_id);
-            $this->assign('user_info',$user_info);
+            session('openid', $open_id);
+            $this->assign('user_info', $user_info);
             $this->display();
             exit;
-        }else{
+        } else {
             //下方为已经登记过的openID的记录
             if ($user['is_lock']) {
                 $this->error('用户被锁定！', '', array('input' => ''));
             }
             //更新数据库的参数
             $data = array('id' => $user['id'], //保存时会自动为此ID的更新
-                'login_time'       => date('Y-m-d H:i:s'),
-                'login_ip'         => get_client_ip(),
-                'login_num'        => $user['login_num'] + 1,
+                'login_time' => date('Y-m-d H:i:s'),
+                'login_ip' => get_client_ip(),
+                'login_num' => $user['login_num'] + 1,
             );
             //更新数据库
             M('member')->save($data);
