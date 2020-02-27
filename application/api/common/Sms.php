@@ -17,8 +17,9 @@ class Sms
         $smsData = Db("sms")->where(['phone' => $phone])->find();
         $sms = new Sms();
         $yzmcontent = str_replace("{验证码}",$code,config("sms_template"));
-        $apikey = config("sms_apikey");
-        $data = array('content' => urlencode($yzmcontent), 'apikey' => $apikey, 'mobile' => $phone);
+        //$apikey = config("sms_apikey");
+        //$data = array('content' => urlencode($yzmcontent), 'apikey' => $apikey, 'mobile' => $phone);
+        $data = array('content' => $yzmcontent, 'mobile' => $phone);
 
         if ($smsData) {
 
@@ -36,10 +37,8 @@ class Sms
                     Db("sms")->where(['phone' => $phone])->update(['code' => $code, 'time' => time(), 'count' => 0]);
                     return true;
                 }
-                $result = $sms->send_yzm($data);
-                $data = json_decode($result, true);
                 //判断是否发送成功
-                if ($data['code'] == 1) {
+                if ($sms->send_yzm($data)) {
                     //发送成功，保存入库，返回true
                     Db("sms")->where(['phone' => $phone])->update(['code' => $code, 'time' => time(), 'count' => 0]);
                     return true;
@@ -55,11 +54,8 @@ class Sms
                 Db("sms")->where(['phone' => $phone])->update(['code' => $code, 'time' => time(), 'count' => 0]);
                 return true;
             }
-            $result = $sms->send_yzm($data);
-
-            $data = json_decode($result, true);
             //判断是否发送成功
-            if ($data['code'] == 1) {
+            if ($sms->send_yzm($data)) {
                 //发送成功，保存入库，返回true
                 Db("sms")->insert(['phone' => $phone, 'code' => $code, 'time' => time()]);
                 return true;
@@ -123,23 +119,66 @@ class Sms
     //验证码
     private function send_yzm($data)
     {
+        $sms_server = config('sms_server');
+        if($sms_server == 'mysubmail'){
+            return $this->mysubmail($data);
+        }else{
+            return $this->dingdong($data);
+        }
+
+    }
+
+    private function post($url,$params,$header=array()){
+        $_headers=isset($header['Content-Type']) ? array() : array(
+            "Content-Type: application/x-www-form-urlencoded"
+        );
+        foreach ($header as $key=>$val){
+            $_headers[] = $key.': '.$val;
+        }
+
+        $postData = http_build_query($params);
+
+        $_headers[] = 'Content-Length: ' . strlen($postData);
+
         $ch = curl_init();
 
-        /* 设置验证方式 */
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Accept:text/plain;charset=utf-8', 'Content-Type:application/x-www-form-urlencoded', 'charset=utf-8'));
+        curl_setopt ( $ch, CURLOPT_URL, $url );
+        curl_setopt ( $ch, CURLOPT_RETURNTRANSFER, 1 );
+        curl_setopt ( $ch, CURLOPT_CUSTOMREQUEST, 'POST' );
+        curl_setopt ( $ch, CURLOPT_POSTFIELDS, $postData );
+        curl_setopt ( $ch, CURLOPT_HTTPHEADER, $_headers );
+        curl_setopt ( $ch, CURLOPT_TIMEOUT, 60 );
+        $https = strpos(strtolower($url),"https://") !== false;
+        if ($https) {
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE); // 对认证证书来源的检查
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE); // 从证书中检查SSL加密算法是否存在
+        }
 
-        /* 设置返回结果为流 */
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $result = curl_exec($ch);
+        return json_decode($result, true);
+    }
 
-        /* 设置超时时间*/
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    private function dingdong($data){
+        $data['apikey'] = config("sms_apikey");
+        $data['content'] = urlencode($data['content']);
+        $result = $this->post('http://api.dingdongcloud.com/v1/sms/sendyzm',$data);
+        if ($result['code'] == 1) {
+            return true;
+        }
+        return false;
+    }
 
-        /* 设置通信方式 */
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    private function mysubmail($data){
+        $params = array();
+        $params['appid'] = config("mysubmail_sms_appid");
+        $params['to'] = $data['mobile'];
+        $params['content'] = $data['content'];
+        $params['signature'] = config("mysubmail_sms_apikey");
 
-        curl_setopt($ch, CURLOPT_URL, 'http://api.dingdongcloud.com/v1/sms/sendyzm');
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-        return curl_exec($ch);
+        $result = $this->post('http://api.mysubmail.com/message/send.json',$params);
+        if ($result['status'] == 'success') {
+            return true;
+        }
+        return false;
     }
 }
