@@ -38,13 +38,4 @@ Route::controller('text_image','api/textImage');
 
 Route::controller('captcha','index/index/captcha');
 Route::get('thumb/:scale','api/api/img');
-return [
-    '__pattern__' => [
-        'name' => '\w+',
-    ],
-    '[hello]'     => [
-        ':id'   => ['index/hello', ['method' => 'get'], ['id' => '\d+']],
-        ':name' => ['index/hello', ['method' => 'post']],
-    ],
-
-];
+return [];
