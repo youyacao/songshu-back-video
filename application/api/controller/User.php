@@ -11,87 +11,9 @@ use think\db\exception\ModelNotFoundException;
 use think\Exception;
 use think\exception\DbException;
 use think\response\Json;
-use think\Db;
 
 class User extends Controller
 {
-    /**
-     * Notes:生成一个邀请码
-     * User: JackXie
-     * Date: 2020/02/22
-     * Time: 18:12
-     * @return String
-     * @throws \think\Exception
-     * @throws \think\exception\PDOException
-     */
-    private function getInvite(){
-        $str = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        $code = '';
-        for($i=0;$i<6;$i++){
-            $code .= $str[rand(0,strlen($str)-1)];
-        }
-        if(Db('user')->where('invit_code',$code)->find()){
-            return $this->getInvite();
-        }
-        return $code;
-    }
-
-    /**
-     * Notes:执行邀请成功后的奖励操作
-     * User: JackXie
-     * Date: 2020/02/22
-     * Time: 20:59
-     * @param $user 被邀请用户
-     * @param $invitor 邀请人
-     */
-    private function invite_do($user,$invitor){
-        $bonus_start = intval(config('bonus_start'));
-        $bonus_end = intval(config('bonus_end'));
-        if($bonus_end<=$bonus_start || $bonus_start<0) return;
-        $bonus = mt_rand($bonus_start,$bonus_end);
-        // 启动事务
-        Db::startTrans();
-        try{
-            //添加邀请记录
-            $data = array();
-            $data['user_id'] = $invitor['id'];
-            $data['invite_uid'] = $user['id'];
-            $data['invite_code'] = $user['reg_code'];
-            $data['bonus'] = $bonus;
-            $data['created_at'] = date('Y-m-d H:i:s');
-
-            $id = Db("invite")->insertGetId($data);
-
-            $invitor = Db("user")->where('id',$invitor['id'])->find();
-            $allMoney = $invitor['money'] + $bonus;
-
-            if(!Db('user')->where('id',$invitor['id'])->update(['money'=>$allMoney])){
-                Db::rollback();
-                return;
-            }
-
-            //添加账变记灵
-            $data = array();
-            $data['user_id'] = $invitor['id'];
-            $data['num'] = $bonus;
-            $data['before_money'] = $invitor['money'];
-            $data['after_money'] = $allMoney;
-            $data['info'] = '推广奖励';
-            $data['data_id'] = $id;
-            $data['data_type'] = 'invite';
-            $data['created_at'] = date('Y-m-d H:i:s');
-            Db('account_change')->insert($data);
-
-
-
-            // 提交事务
-            Db::commit();
-        } catch (\Exception $e) {
-            // 回滚事务
-            Db::rollback();
-        }
-    }
-
     /**
      * Notes: 登录
      *  1.用户名或密码登录
@@ -158,28 +80,9 @@ class User extends Controller
                 $code = input("code/i");
                 if(!$user)
                 {
-
-                    $have_invite_code = input('have_invite_code/i');
-                    $parent = NULL;
-                    if($have_invite_code == 0){
-                        return error("need_invite");
-                    }else{
-                        $invite_code = input("invite_code/i");
-                        if(strlen($invite_code) > 0){
-                            $parent = Db('user')->where('invit_code',$invite_code)->where('disable',0)->find();
-                            if(!$parent){
-                                return error('邀请码不正确');
-                            }
-                        }
-
-                    }
-
                     //用户不存在，自动注册
                     $user = [
                         "phone"=>$phone,
-                        'parent_id'=>$parent ? $parent['id'] : 0,
-                        'invit_code'=>$this->getInvite(),
-                        'reg_code'=>$parent ? $parent['invit_code'] : NULL,
                         "create_time"=>date("Y-m-d H:i:s",time()),
                         "head_img"=>'static/image/head.png',
                         "name"=>substr($phone,0,3)."****".substr($phone,-4,strlen($phone)),
@@ -188,10 +91,6 @@ class User extends Controller
                     $id = Db("user")->insertGetId($user);
                     u_log("手机用户".$phone."注册成功",'login');
                     $user['id']=$id;
-
-                    //执行邀请奖励
-                    if($parent) $this->invite_do($user,$parent);
-
                     session("user",$user);
                     return success("注册成功",$user);
                 }
@@ -308,7 +207,6 @@ class User extends Controller
             $user['skr_count']=$skr_count;//获赞数
             $user['fans_count']=$fans_count;// 粉丝数
             $user['follow_count']=$follow_count;//关注数
-            $user['invite_count'] = Db('invite')->where('user_id',$user['id'])->count();
             u_log("用户".$user['name']."(".$user['id'].")通过Token验证登录成功");
             return success("验证成功",$user);
         }
@@ -341,8 +239,6 @@ class User extends Controller
                 'ifnull(name,phone) name',
                 'password',
                 'phone',
-                'money',
-                'invit_code',
                 'mail',
                 'qq',
                 'create_time',
@@ -378,7 +274,6 @@ class User extends Controller
         $user['skr_count']=$skr_count;//获赞数
         $user['fans_count']=$fans_count;// 粉丝数
         $user['follow_count']=$follow_count;//关注数
-        $user['invite_count'] = Db('invite')->where('user_id',$user['id'])->count();
         u_log("用户".$user['name']."(".$user['id'].")获取用户最新信息");
         return success("成功",$user);
     }
@@ -589,26 +484,14 @@ class User extends Controller
         //用户不存在，自动注册
         $username = input('username');
         $password = input('password');
-        $invitecode = input('invitecode');
         $user = Db("user")->where(['username'=>$username])->find();
         if($user){
             return error("该用户名已存在，请重新输入");
         }
-        $parent = NULL;
-
-        if(strlen($invitecode) > 0){
-            $parent = Db('user')->where('invit_code',$invitecode)->where('disable',0)->find();
-            if(!$parent){
-                return error('邀请码不正确');
-            }
-        }
-
+        $user = [];
         $user = [
             "username"=>$username,
             'password'=>pass($password),
-            'parent_id'=>$parent ? $parent['id'] : 0,
-            'invit_code'=>$this->getInvite(),
-            'reg_code'=>$parent ? $parent['invit_code'] : NULL,
             "create_time"=>date("Y-m-d H:i:s",time()),
             "head_img"=>'static/image/head.png',
             "name"=>$username,
@@ -618,353 +501,7 @@ class User extends Controller
         u_log("用户".$username."注册成功",'login');
         $user['id']=$id;
         session("user",$user);
-
-        //执行邀请成功奖励
-        if($parent) $this->invite_do(gold_rate,$parent);
-
         return success("注册成功",$user);
     }
 
-    public function getGoldinfo(){
-        $user = session("user");
-        if (!$user) {
-            return error("未登录");
-        }
-        $data = array();
-        $data['gold_rate'] = config('gold_rate');
-        $data['withdraw_min'] = config('withdraw_min');
-        $data['money'] = Db('user')->where('id',$user['id'])->value('money');
-        return success(NULL,$data);
-    }
-
-    public function postWithdraw(){
-        $user = session("user");
-        if (!$user) {
-            return error("未登录");
-        }
-        $code = input('code');
-        $user = Db('user')->where('id',$user['id'])->where('disable',0)->find();
-        if(!$user){
-            return error("未找到相应用户");
-        }
-        $phone = $user['phone'];
-        if(!$phone){
-            return error("您还未绑定手机号码");
-        }
-
-        //判断短信验证码是否正确
-        /*if(!Sms::verifySms($phone,$code))
-        {
-            u_log("手机用户".$phone."提现验证码不正确",'error');
-            return error("验证码错误");
-        }*/
-
-        $money = intval(input('num'));
-        if($money<=0){
-            return error("提现金币数只能为大于0的整数");
-        }
-        $min = intval(config('withdraw_min'));
-        if($min<=0){
-            return error('当前无法提现，联系管理员');
-        }
-        if($money<$min){
-            return error('提现金币数不能低于'.$min.'金币');
-        }
-        if($user['money']<$money){
-            return error('剩于金币数不够，无法提现');
-        }
-        $bank = input('bank');
-        $bankname = input('bankname');
-        $name = input('name');
-        $account = input('account');
-        if(strlen($bank) == 0){
-            return error('请输入银行名称');
-        }
-        if(strlen($bankname) == 0){
-            return error('请输入开户银行');
-        }
-        if(strlen($name) == 0){
-            return error('请输入开户名称');
-        }
-        if(strlen($account) == 0){
-            return error('请输入收款账号');
-        }
-
-        // 启动事务
-        Db::startTrans();
-        try{
-            $allMoney = $user['money'] - $money;
-
-            if(!Db('user')->where('id',$user['id'])->update(['money'=>$allMoney])){
-                Db::rollback();
-                return error('提现出错，请稍候再试');
-            }
-
-            //添加提现记录
-            $data = array();
-            $data['user_id'] = $user['id'];
-            $data['num'] = $money;
-            $data['bank'] = $bank;
-            $data['bankname'] = $bankname;
-            $data['name'] = $name;
-            $data['account'] = $account;
-            $data['created_at'] = date('Y-m-d H:i:s');;
-            $id = Db('withdraw')->insertGetId($data);
-
-            //添加账变记灵
-            $data = array();
-            $data['user_id'] = $user['id'];
-            $data['num'] = $money*-1;
-            $data['before_money'] = $user['money'];
-            $data['after_money'] = $allMoney;
-            $data['info'] = '金币提现';
-            $data['data_id'] = $id;
-            $data['data_type'] = 'withdraw';
-            $data['created_at'] = date('Y-m-d H:i:s');
-            Db('account_change')->insert($data);
-
-            $bankcard = Db('bankcards')->where('user_id',$user['id'])->where('account')->find();
-            if($bankcard){
-                Db('bankcards')->where('id',$bankcard['id'])->update(['name'=>$name,'status'=>1]);
-            }else{
-                $data = array();
-                $data['user_id'] = $user['id'];
-                $data['bank'] = $bank;
-                $data['bankname'] = $bankname;
-                $data['name'] = $name;
-                $data['account'] = $account;
-                $data['status'] = 1;
-                Db('bankcards')->insert($data);
-            }
-
-            // 提交事务
-            Db::commit();
-            return success('提现申请成功');
-        } catch (\Exception $e) {
-            // 回滚事务
-            Db::rollback();
-        }
-        return error('提现出错，请稍候再试');
-    }
-
-    public function getSms(){
-        $user = session("user");
-        if (!$user) {
-            return error("未登录");
-        }
-        $phone = Db('user')->where('id',$user['id'])->where('disable',0)->value('phone');
-        if(!$phone){
-            return error("您还未绑定手机号码");
-        }
-        if (Sms::sendSms($phone, rand(100000, 999999))) {
-            return success("发送成功");
-        }
-        return error("发送失败");
-
-    }
-
-    public function getWithdrawList(){
-        $user = session("user");
-        if (!$user) {
-            return error("未登录");
-        }
-        $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
-        $withdraw = Db("withdraw")->where('user_id',$user['id'])->order('id desc')->page($page, 20)->select();
-        if(!$withdraw){
-            return error("暂无数据");
-        }
-        return success("成功",$withdraw);
-    }
-    public function test(){
-        echo "test";
-    }
-    public function getChangeList(){
-        $user = session("user");
-        if (!$user) {
-            return error("未登录");
-        }
-        $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
-        $change = Db("account_change")->where('user_id',$user['id'])->order('id desc')->page($page, 20)->select();
-        if(!$change){
-            return error("暂无数据");
-        }
-        return success("成功",$change);
-    }
-
-    public function getInviteList(){
-        $user = session("user");
-        if (!$user) {
-            return error("未登录");
-        }
-        $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
-        $invite = Db("invite")->where('user_id',$user['id'])->order('id desc')->page($page, 20)->select();
-        if(!$invite){
-            return error("暂无数据");
-        }
-        foreach ($invite as $key=>$row){
-            $row['user'] = Db('user')->where('id',$row['invite_uid'])->value('name');
-            $invite[$key] = $row;
-        }
-        return success("成功",$invite);
-    }
-
-    public function getCardList(){
-        $user = session("user");
-        if (!$user) {
-            return error("未登录");
-        }
-        $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
-        $cards = Db("bankcards")->where('user_id',$user['id'])->order('id desc')->page($page, 20)->select();
-        if(!$cards){
-            return error("暂无数据");
-        }
-        return success("成功",$cards);
-    }
-
-    /**
-     * 获取使用中银行卡
-     *
-     * @return Json
-     */
-    public function getCarduseing(){
-        $user = session("user");
-        if (!$user) {
-            return error("未登录");
-        }
-        $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
-        $cards = Db("bankcards")->where('user_id',$user['id'])->where('status',1)->order('id desc')->page($page, 20)->select();
-        if(!$cards){
-            return error("暂无数据");
-        }
-        return success("成功",$cards);
-    }
-
-    /**
-     * 切换银行卡使用状态
-     */
-    public function getCardstatus(){
-        $user = session("user");
-        if (!$user) {
-            return error("未登录");
-        }
-        $id = input('id/i');
-        $card = Db("bankcards")->where('user_id',$user['id'])->where('id',$id)->find();
-        if(!$card){
-            return error('未找到相应银行卡信息');
-        }
-        if(Db('bankcards')->where('id',$card['id'])->update(['status'=>$card['status'] == 1 ? 0 : 1])){
-            return success('修改成功');
-        }
-        return error('修改失败');
-    }
-
-    /**
-     * 删除银行卡信息
-     */
-    public function getDeletecard(){
-        $user = session("user");
-        if (!$user) {
-            return error("未登录");
-        }
-        $id = input('id/i');
-        $card = Db("bankcards")->where('user_id',$user['id'])->where('id',$id)->find();
-        if(!$card){
-            return error('未找到相应银行卡信息');
-        }
-        if(Db('bankcards')->where('id',$card['id'])->delete()){
-            return success('删除银行卡成功');
-        }
-        return error('删除银行卡失败');
-    }
-
-    /**
-     * 添加银行卡信息
-     */
-    public function postAddcard(){
-        $user = session("user");
-        if (!$user) {
-            return error("未登录");
-        }
-        $bank = input('bank');
-        $bankname = input('bankname');
-        $name = input('name');
-        $account = input('account');
-        if(strlen($bank) == 0){
-            return error('请输入银行名称');
-        }
-        if(strlen($bankname) == 0){
-            return error('请输入开户银行');
-        }
-        if(strlen($name) == 0){
-            return error('请输入开户名称');
-        }
-        if(strlen($account) == 0){
-            return error('请输入收款账号');
-        }
-        $data = array();
-        $data['user_id'] = $user['id'];
-        $data['bank'] = $bank;
-        $data['bankname'] = $bankname;
-        $data['name'] = $name;
-        $data['account'] = $account;
-        $data['status'] = 1;
-        if(Db('bankcards')->insert($data)){
-            return success("添加银行卡成功");
-        }
-        return error('添加银行卡失败');
-    }
-
-    public function getCardinfo(){
-        $user = session("user");
-        if (!$user) {
-            return error("未登录");
-        }
-        $id = input('id/i');
-        $card = Db('bankcards')->where('id',$id)->where('user_id',$user['id'])->find();
-        if($card){
-            return success(NULL,$card);
-        }
-        return error('未找到相关信息');
-    }
-
-    /**
-     * 修改银行卡信息
-     */
-    public function postUpdatecard(){
-        $user = session("user");
-        if (!$user) {
-            return error("未登录");
-        }
-        $id = input('id/i');
-        $card = Db('bankcards')->where('id',$id)->where('user_id',$user['id'])->find();
-        if(!$card){
-            return error('未找到相关信息');
-        }
-
-        $bank = input('bank');
-        $bankname = input('bankname');
-        $name = input('name');
-        $account = input('account');
-        if(strlen($bank) == 0){
-            return error('请输入银行名称');
-        }
-        if(strlen($bankname) == 0){
-            return error('请输入开户银行');
-        }
-        if(strlen($name) == 0){
-            return error('请输入开户名称');
-        }
-        if(strlen($account) == 0){
-            return error('请输入收款账号');
-        }
-        $data = array();
-        $data['bank'] = $bank;
-        $data['bankname'] = $bankname;
-        $data['name'] = $name;
-        $data['account'] = $account;
-        if(Db('bankcards')->where('id',$card['id'])->update($data)){
-            return success("修改银行卡成功");
-        }
-        return error('修改银行卡失败');
-    }
 }
