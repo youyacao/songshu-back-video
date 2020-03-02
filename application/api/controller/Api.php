@@ -295,6 +295,7 @@ class Api extends Controller
             'advert_count',//广告刷到的频率
             'share_url',//分享地址
         ];
+
         $config = Db("config")->whereIn("name", $publicConfig)->field("name,value")->select();
         $res = [];
         foreach ($config as $key => $value) {
