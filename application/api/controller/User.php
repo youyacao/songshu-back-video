@@ -4,7 +4,9 @@
 namespace app\api\controller;
 
 
+use app\api\common\Mail;
 use app\api\common\Sms;
+use think\captcha\Captcha;
 use think\Controller;
 use think\db\exception\DataNotFoundException;
 use think\db\exception\ModelNotFoundException;
@@ -24,13 +26,14 @@ class User extends Controller
      * @throws \think\Exception
      * @throws \think\exception\PDOException
      */
-    private function getInvite(){
+    private function getInvite()
+    {
         $str = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         $code = '';
-        for($i=0;$i<6;$i++){
-            $code .= $str[rand(0,strlen($str)-1)];
+        for ($i = 0; $i < 6; $i++) {
+            $code .= $str[rand(0, strlen($str) - 1)];
         }
-        if(Db('user')->where('invit_code',$code)->find()){
+        if (Db('user')->where('invit_code', $code)->find()) {
             return $this->getInvite();
         }
         return $code;
@@ -44,14 +47,15 @@ class User extends Controller
      * @param $user 被邀请用户
      * @param $invitor 邀请人
      */
-    private function invite_do($user,$invitor){
+    private function invite_do($user, $invitor)
+    {
         $bonus_start = intval(config('bonus_start'));
         $bonus_end = intval(config('bonus_end'));
-        if($bonus_end<=$bonus_start || $bonus_start<0) return;
-        $bonus = mt_rand($bonus_start,$bonus_end);
+        if ($bonus_end <= $bonus_start || $bonus_start < 0) return;
+        $bonus = mt_rand($bonus_start, $bonus_end);
         // 启动事务
         Db::startTrans();
-        try{
+        try {
             //添加邀请记录
             $data = array();
             $data['user_id'] = $invitor['id'];
@@ -62,10 +66,10 @@ class User extends Controller
 
             $id = Db("invite")->insertGetId($data);
 
-            $invitor = Db("user")->where('id',$invitor['id'])->find();
+            $invitor = Db("user")->where('id', $invitor['id'])->find();
             $allMoney = $invitor['money'] + $bonus;
 
-            if(!Db('user')->where('id',$invitor['id'])->update(['money'=>$allMoney])){
+            if (!Db('user')->where('id', $invitor['id'])->update(['money' => $allMoney])) {
                 Db::rollback();
                 return;
             }
@@ -83,7 +87,6 @@ class User extends Controller
             Db('account_change')->insert($data);
 
 
-
             // 提交事务
             Db::commit();
         } catch (\Exception $e) {
@@ -99,13 +102,13 @@ class User extends Controller
      *  3,第三方登录
      * 微信登录返回数据：
      *     {
-    "access_token": "26_VsXY7jFe0Q68s45mDNdgg15uzZ7iw7V9YVrzHjwi4kPRcHtxWHXx9_bZwtaK-iXBGVjWFEE93EqO_I8cZlGqd_DtrTnesaGbTM1uuGO6T3c",
-    "expires_in": 7200,
-    "refresh_token": "26_1B7iawAH9A2v2JKrUNqCQCI1Dq1qzQneJNA4-JmPzZ1sWt5KVnBwBLD10wnFGt8JPpCWuzp-AMaEdRX7QdaP54BJ2BUv-3yyQ3gzrricevU",
-    "openid": "oRrdQt18I0MOhKLQWpiGXx2qpz70",
-    "scope": "snsapi_userinfo",
-    "unionid": "oU5Yyt3Vc-2Xo0ytSQ4BpjLS8cWY"
-    }
+     * "access_token": "26_VsXY7jFe0Q68s45mDNdgg15uzZ7iw7V9YVrzHjwi4kPRcHtxWHXx9_bZwtaK-iXBGVjWFEE93EqO_I8cZlGqd_DtrTnesaGbTM1uuGO6T3c",
+     * "expires_in": 7200,
+     * "refresh_token": "26_1B7iawAH9A2v2JKrUNqCQCI1Dq1qzQneJNA4-JmPzZ1sWt5KVnBwBLD10wnFGt8JPpCWuzp-AMaEdRX7QdaP54BJ2BUv-3yyQ3gzrricevU",
+     * "openid": "oRrdQt18I0MOhKLQWpiGXx2qpz70",
+     * "scope": "snsapi_userinfo",
+     * "unionid": "oU5Yyt3Vc-2Xo0ytSQ4BpjLS8cWY"
+     * }
      * User: BigNiu
      * Date: 2019/10/8
      * Time: 15:58
@@ -114,60 +117,67 @@ class User extends Controller
      * @throws ModelNotFoundException
      * @throws DbException
      */
-    public function getLogin(){
+    public function getLogin()
+    {
 
         $type = input("type");
-        switch ($type)
-        {
+        switch ($type) {
             case "uap"://user and pass
                 $username = input("username");//用户名
                 $password = input("password");//密码
                 $vcode = input("vcode");//验证码
-                $user = Db("user")->where(['name'=>$username])->find();
-                if(!$user)
-                {
-                    u_log("用户名:".$username."密码:".$password." 登录失败,用户不存在",'error');
+                //验证验证码
+                $captcha = new Captcha();
+                if(!$captcha->check($vcode)){
+                    return error("验证码错误");
+                }
+                $user = Db("user")->where(['name|mail|phone' => $username])->find();
+                if (!$user) {
+                    u_log("用户名:" . $username . "密码:" . $password . " 登录失败,用户不存在", 'error');
                     return error("用户名或密码错误");
                 }
                 //判断是否封号
-                if($user['disable']==1){
+                if ($user['disable'] == 1) {
                     //判断封号到期时间是否大于当前时间
-                    if(strtotime(is_null($user['disable_time'])?'00:00:00':$user['disable_time'])>time()){
+                    if (strtotime(is_null($user['disable_time']) ? '00:00:00' : $user['disable_time']) > time()) {
                         //还处于封号状态，返回登录失败
-                        return error('该账户已封禁，将于 '.$user['disable_time'].' 解封');
-                    }else{
+                        return error('该账户已封禁，将于 ' . $user['disable_time'] . ' 解封');
+                    } else {
                         //处于封禁状态，但是已过封禁时间，更新状态
-                        Db("user")->where(['id'=>$user['id']])->update(['disable'=>0,'disable_time'=>null]);
+                        Db("user")->where(['id' => $user['id']])->update(['disable' => 0, 'disable_time' => null]);
                         //
                     }
                 }
-                if(pass($password)!=$user['password'])
-                {
-                    u_log("用户名:".$username."密码:".$password." 登录失败,密码错误",'error');
+                if (!$user['password']) {
+                    if($password!='123456'){
+                        u_log("用户名:" . $username . "密码:" . $password . " 登录失败,密码错误", 'error');
+                        return error("用户名或密码错误");
+                    }
+                } elseif (pass($password) != $user['password']) {
+                    u_log("用户名:" . $username . "密码:" . $password . " 登录失败,密码错误", 'error');
                     return error("用户名或密码错误");
                 }
-                $token =pass($username.time().getRandStr()).$username;
-                Db("user")->where(['username'=>$username])->update(["token"=>$token]);
-                session("user",$user);
+                $token = pass($username . time() . getRandStr()) . $username;
+                Db("user")->where(['id' => $user['id']])->update(["token" => $token]);
+                session("user", $user);
                 unset($user['password']);
-                return success("登录成功",$user);
+                return success("登录成功", $user);
                 break;
             case "phone"://手机验证码登录
                 $phone = input("phone/i");//手机号
-                $user = Db("user")->where(['phone'=>$phone])->find();
+                $user = Db("user")->where(['phone' => $phone])->find();
                 $code = input("code/i");
-                if(!$user)
-                {
+                if (!$user) {
 
                     $have_invite_code = input('have_invite_code/i');
                     $parent = NULL;
-                    if($have_invite_code == 0){
+                    if ($have_invite_code == 0) {
                         return error("need_invite");
-                    }else{
+                    } else {
                         $invite_code = input("invite_code/i");
-                        if(strlen($invite_code) > 0){
-                            $parent = Db('user')->where('invit_code',$invite_code)->where('disable',0)->find();
-                            if(!$parent){
+                        if (strlen($invite_code) > 0) {
+                            $parent = Db('user')->where('invit_code', $invite_code)->where('disable', 0)->find();
+                            if (!$parent) {
                                 return error('邀请码不正确');
                             }
                         }
@@ -176,91 +186,90 @@ class User extends Controller
 
                     //用户不存在，自动注册
                     $user = [
-                        "phone"=>$phone,
-                        'parent_id'=>$parent ? $parent['id'] : 0,
-                        'invit_code'=>$this->getInvite(),
-                        'reg_code'=>$parent ? $parent['invit_code'] : NULL,
-                        "create_time"=>date("Y-m-d H:i:s",time()),
-                        "head_img"=>'static/image/head.png',
-                        "name"=>substr($phone,0,3)."****".substr($phone,-4,strlen($phone)),
-                        "token"=>pass($phone.time().getRandStr()).$phone
+                        "phone" => $phone,
+                        'parent_id' => $parent ? $parent['id'] : 0,
+                        'invit_code' => $this->getInvite(),
+                        'reg_code' => $parent ? $parent['invit_code'] : NULL,
+                        "create_time" => date("Y-m-d H:i:s", time()),
+                        "head_img" => 'static/image/head.png',
+                        "name" => substr($phone, 0, 3) . "****" . substr($phone, -4, strlen($phone)),
+                        "token" => pass($phone . time() . getRandStr()) . $phone
                     ];
                     $id = Db("user")->insertGetId($user);
-                    u_log("手机用户".$phone."注册成功",'login');
-                    $user['id']=$id;
+                    u_log("手机用户" . $phone . "注册成功", 'login');
+                    $user['id'] = $id;
 
                     //执行邀请奖励
-                    if($parent) $this->invite_do($user,$parent);
+                    if ($parent) $this->invite_do($user, $parent);
 
-                    session("user",$user);
-                    return success("注册成功",$user);
+                    session("user", $user);
+                    return success("注册成功", $user);
                 }
                 //判断是否封号
-                if($user['disable']==1){
+                if ($user['disable'] == 1) {
                     //判断封号到期时间是否大于当前时间
-                    if(strtotime(is_null($user['disable_time'])?'00:00:00':$user['disable_time'])>time()){
+                    if (strtotime(is_null($user['disable_time']) ? '00:00:00' : $user['disable_time']) > time()) {
                         //还处于封号状态，返回登录失败
-                        return error('该账户已封禁,将于 '.$user['disable_time'].' 解封');
-                    }else{
+                        return error('该账户已封禁,将于 ' . $user['disable_time'] . ' 解封');
+                    } else {
                         //处于封禁状态，但是已过封禁时间，更新状态
-                        Db("user")->where(['id'=>$user['id']])->update(['disable'=>0,'disable_time'=>null]);
+                        Db("user")->where(['id' => $user['id']])->update(['disable' => 0, 'disable_time' => null]);
                     }
                 }
                 //判断短信验证码是否正确
-                if(!Sms::verifySms($phone,$code))
-                {
-                    u_log("手机用户".$phone."登录失败",'error');
+                if (!Sms::verifySms($phone, $code)) {
+                    u_log("手机用户" . $phone . "登录失败", 'error');
                     return error("验证码错误");
                 }
 
-                $token = pass($phone.time().getRandStr()).$phone;
-                Db("user")->where(['phone'=>$phone])->update(["token"=>$token]);
-                $user['token']=$token;
-                session("user",$user);
+                $token = pass($phone . time() . getRandStr()) . $phone;
+                Db("user")->where(['phone' => $phone])->update(["token" => $token]);
+                $user['token'] = $token;
+                session("user", $user);
                 unset($user['password']);
-                u_log("手机用户".$phone."登录成功",'login');
-                return success("登录成功",$user);
+                u_log("手机用户" . $phone . "登录成功", 'login');
+                return success("登录成功", $user);
                 break;
             case "qq":
                 //QQ登录
                 $open_id = input("openid");
                 $access_token = input('access_token');
-                if(!$open_id||!$access_token){
+                if (!$open_id || !$access_token) {
                     return error("登录失败");
                 }
                 Vendor('qq.qqConnectAPI');
-                $qc = new \QC($access_token,$open_id);
+                $qc = new \QC($access_token, $open_id);
                 $user_info = $qc->get_user_info();
 
-                $user = Db("user")->where(['qq_openid'=>$open_id])->find();
+                $user = Db("user")->where(['qq_openid' => $open_id])->find();
                 //用户不存在，新增用户
-                if(!$user){
+                if (!$user) {
                     $user = [
-                        "qq_openid"=>$open_id,
-                        "create_time"=>date("Y-m-d H:i:s",time()),
-                        "head_img"=>$user_info['figureurl_qq'],
-                        "name"=>$user_info['nickname'],
-                        "username"=>$user_info['nickname'],
-                        "token"=>pass($open_id.time().getRandStr()).$open_id
+                        "qq_openid" => $open_id,
+                        "create_time" => date("Y-m-d H:i:s", time()),
+                        "head_img" => $user_info['figureurl_qq'],
+                        "name" => $user_info['nickname'],
+                        "username" => $user_info['nickname'],
+                        "token" => pass($open_id . time() . getRandStr()) . $open_id
                     ];
                     $id = Db("user")->insertGetId($user);
-                    u_log("QQ用户".$user_info['nickname']."注册成功",'login');
-                    $user['id']=$id;
-                    session("user",$user);
-                    return success("注册成功",$user);
-                }else{
+                    u_log("QQ用户" . $user_info['nickname'] . "注册成功", 'login');
+                    $user['id'] = $id;
+                    session("user", $user);
+                    return success("注册成功", $user);
+                } else {
                     //用户已存在，更新用户信息
                     $update = [
-                        "head_img"=>$user_info['figureurl_qq'],
-                        "name"=>$user_info['nickname'],
-                        "username"=>$user_info['nickname'],
-                        "token"=>pass($open_id.time().getRandStr()).$open_id
+                        "head_img" => $user_info['figureurl_qq'],
+                        "name" => $user_info['nickname'],
+                        "username" => $user_info['nickname'],
+                        "token" => pass($open_id . time() . getRandStr()) . $open_id
                     ];
-                    $res = Db("user")->where(['qq_openid'=>$open_id])->update($update);
-                    $user = Db("user")->where(['id'=>$user['id']])->find();
-                    u_log("QQ用户".$user_info['nickname']."登录成功",'login');
-                    session("user",$user);
-                    return success("登录成功",$user);
+                    $res = Db("user")->where(['qq_openid' => $open_id])->update($update);
+                    $user = Db("user")->where(['id' => $user['id']])->find();
+                    u_log("QQ用户" . $user_info['nickname'] . "登录成功", 'login');
+                    session("user", $user);
+                    return success("登录成功", $user);
 
                 }
                 break;
@@ -280,37 +289,38 @@ class User extends Controller
      * @throws ModelNotFoundException
      * @throws Exception
      */
-    public function getAuth(){
-        $token = input("token",null);
-        if(!$token){
+    public function getAuth()
+    {
+        $token = input("token", null);
+        if (!$token) {
             return error("验证失败");
         }
-        $user = Db("user")->where(["token"=>$token])->find();
-        if($user){
+        $user = Db("user")->where(["token" => $token])->find();
+        if ($user) {
             //判断是否封号
-            if($user['disable']==1){
+            if ($user['disable'] == 1) {
                 //判断封号到期时间是否大于当前时间
-                if(strtotime(is_null($user['disable_time'])?'00:00:00':$user['disable_time'])>time()){
+                if (strtotime(is_null($user['disable_time']) ? '00:00:00' : $user['disable_time']) > time()) {
                     //还处于封号状态，返回登录失败
-                    return error('该账户已封禁,将于 '.$user['disable_time'].' 解封');
-                }else{
+                    return error('该账户已封禁,将于 ' . $user['disable_time'] . ' 解封');
+                } else {
                     //处于封禁状态，但是已过封禁时间，更新状态
-                    Db("user")->where(['id'=>$user['id']])->update(['disable'=>0,'disable_time'=>null]);
+                    Db("user")->where(['id' => $user['id']])->update(['disable' => 0, 'disable_time' => null]);
                 }
             }
-            session("user",$user);
-            $vids = Db("video")->where(['uid'=>$user['id']])->field("id")->select();
-            $ids = array_column($vids,"id");
-            $skr_count = Db("skr")->whereIn('vid',$ids)->count('id');//获赞数
-            $fans_count = Db("follow")->where(['follow_id'=>$user['id']])->count('id');
-            $follow_count = Db("follow")->where(['uid'=>$user['id']])->count('id');
+            session("user", $user);
+            $vids = Db("video")->where(['uid' => $user['id']])->field("id")->select();
+            $ids = array_column($vids, "id");
+            $skr_count = Db("skr")->whereIn('vid', $ids)->count('id');//获赞数
+            $fans_count = Db("follow")->where(['follow_id' => $user['id']])->count('id');
+            $follow_count = Db("follow")->where(['uid' => $user['id']])->count('id');
             unset($user['password']);
-            $user['skr_count']=$skr_count;//获赞数
-            $user['fans_count']=$fans_count;// 粉丝数
-            $user['follow_count']=$follow_count;//关注数
-            $user['invite_count'] = Db('invite')->where('user_id',$user['id'])->count();
-            u_log("用户".$user['name']."(".$user['id'].")通过Token验证登录成功");
-            return success("验证成功",$user);
+            $user['skr_count'] = $skr_count;//获赞数
+            $user['fans_count'] = $fans_count;// 粉丝数
+            $user['follow_count'] = $follow_count;//关注数
+            $user['invite_count'] = Db('invite')->where('user_id', $user['id'])->count();
+            u_log("用户" . $user['name'] . "(" . $user['id'] . ")通过Token验证登录成功");
+            return success("验证成功", $user);
         }
         return error("验证失败");
     }
@@ -327,7 +337,8 @@ class User extends Controller
      * @throws DbException
      * @throws Exception
      */
-    public function getUserInfo(){
+    public function getUserInfo()
+    {
         $user = session("user");
 
         if (!$user) {
@@ -335,7 +346,7 @@ class User extends Controller
         }
 
         $user = Db("user")
-            ->where(['id'=>$user['id']])
+            ->where(['id' => $user['id']])
             ->field([
                 'id',
                 'ifnull(name,phone) name',
@@ -357,31 +368,32 @@ class User extends Controller
             return error("未登录");
         }
         //判断是否封号
-        if($user['disable']==1){
+        if ($user['disable'] == 1) {
             //判断封号到期时间是否大于当前时间
-            if(strtotime(is_null($user['disable_time'])?'00:00:00':$user['disable_time'])>time()){
+            if (strtotime(is_null($user['disable_time']) ? '00:00:00' : $user['disable_time']) > time()) {
                 //还处于封号状态，返回登录失败
-                return error('该账户已封禁,将于 '.$user['disable_time'].' 解封');
-            }else{
+                return error('该账户已封禁,将于 ' . $user['disable_time'] . ' 解封');
+            } else {
                 //处于封禁状态，但是已过封禁时间，更新状态
-                Db("user")->where(['id'=>$user['id']])->update(['disable'=>0,'disable_time'=>null]);
+                Db("user")->where(['id' => $user['id']])->update(['disable' => 0, 'disable_time' => null]);
             }
         }
-        $vids = Db("video")->where(['uid'=>$user['id']])->field("id")->select();
-        $ids = array_column($vids,"id");
-        $skr_count = Db("skr")->whereIn('vid',$ids)->count('id');//获赞数
-        $fans_count = Db("follow")->where(['follow_id'=>$user['id']])->count('id');
-        $follow_count = Db("follow")->where(['uid'=>$user['id']])->count('id');
+        $vids = Db("video")->where(['uid' => $user['id']])->field("id")->select();
+        $ids = array_column($vids, "id");
+        $skr_count = Db("skr")->whereIn('vid', $ids)->count('id');//获赞数
+        $fans_count = Db("follow")->where(['follow_id' => $user['id']])->count('id');
+        $follow_count = Db("follow")->where(['uid' => $user['id']])->count('id');
         $password = $user['password'];
         unset($user['password']);
-        $user['set_pass']=$password?true:false;//是否设置密码
-        $user['skr_count']=$skr_count;//获赞数
-        $user['fans_count']=$fans_count;// 粉丝数
-        $user['follow_count']=$follow_count;//关注数
-        $user['invite_count'] = Db('invite')->where('user_id',$user['id'])->count();
-        u_log("用户".$user['name']."(".$user['id'].")获取用户最新信息");
-        return success("成功",$user);
+        $user['set_pass'] = $password ? true : false;//是否设置密码
+        $user['skr_count'] = $skr_count;//获赞数
+        $user['fans_count'] = $fans_count;// 粉丝数
+        $user['follow_count'] = $follow_count;//关注数
+        $user['invite_count'] = Db('invite')->where('user_id', $user['id'])->count();
+        u_log("用户" . $user['name'] . "(" . $user['id'] . ")获取用户最新信息");
+        return success("成功", $user);
     }
+
     /**
      * Notes:获取用户信息
      * User: BigNiu
@@ -393,16 +405,17 @@ class User extends Controller
      * @throws DbException
      * @throws Exception
      */
-    public function getOtherUserInfo(){
+    public function getOtherUserInfo()
+    {
         $user = session("user");
         /*if (!$user) {
             return error("未登录");
         }*/
         $uid = input('uid/i');
-        $follow = Db("follow")->where(['uid'=>$user['id'],'follow_id'=>$uid])->find();
+        $follow = Db("follow")->where(['uid' => $user['id'], 'follow_id' => $uid])->find();
 
         $user = Db("user")
-            ->where(['id'=>$uid])
+            ->where(['id' => $uid])
             ->field([
                 'id',
                 'ifnull(name,phone) name',
@@ -411,22 +424,23 @@ class User extends Controller
                 "custom_id"
             ])
             ->find();
-        if(!$user){
+        if (!$user) {
             return error("用户不存在");
         }
 
-        $vids = Db("video")->where(['uid'=>$user['id']])->field("id")->select();
-        $ids = array_column($vids,"id");
-        $skr_count = Db("skr")->whereIn('vid',$ids)->count('id');//获赞数
-        $fans_count = Db("follow")->where(['follow_id'=>$user['id']])->count('id');
-        $follow_count = Db("follow")->where(['uid'=>$user['id']])->count('id');
-        $user['skr_count']=$skr_count;//获赞数
-        $user['fans_count']=$fans_count;// 粉丝数
-        $user['follow_count']=$follow_count;//关注数
+        $vids = Db("video")->where(['uid' => $user['id']])->field("id")->select();
+        $ids = array_column($vids, "id");
+        $skr_count = Db("skr")->whereIn('vid', $ids)->count('id');//获赞数
+        $fans_count = Db("follow")->where(['follow_id' => $user['id']])->count('id');
+        $follow_count = Db("follow")->where(['uid' => $user['id']])->count('id');
+        $user['skr_count'] = $skr_count;//获赞数
+        $user['fans_count'] = $fans_count;// 粉丝数
+        $user['follow_count'] = $follow_count;//关注数
 
-        $user['follow']=$follow!=null?true:false;
-        return success("成功",$user);
+        $user['follow'] = $follow != null ? true : false;
+        return success("成功", $user);
     }
+
     /**
      * Notes:更新用户资料
      * User: BigNiu
@@ -436,7 +450,8 @@ class User extends Controller
      * @throws Exception
      * @throws \think\exception\PDOException
      */
-    public function postUpdate(){
+    public function postUpdate()
+    {
         $user = session("user");
         if (!$user) {
             return error("未登录");
@@ -451,28 +466,25 @@ class User extends Controller
         $old_password = input("old_password");//老密码
         $vcode = input("vcode");//验证码
         $data = [
-            'name'=>$name,
-            'head_img'=>$head_img,
-            'mail'=>$mail,
-            'qq'=>$qq,
-            'birthday'=>$birthday,
+            'name' => $name,
+            'head_img' => $head_img,
+            'mail' => $mail,
+            'qq' => $qq,
+            'birthday' => $birthday,
 
         ];
         //用户有传ID并且未设置自定义ID
-        if($id&&!isset($user['custom_id']))
-        {
-            $data['custom_id']=$id;
-        }elseif($id&&isset($user['custom_id']))
-        {
+        if ($id && !isset($user['custom_id'])) {
+            $data['custom_id'] = $id;
+        } elseif ($id && isset($user['custom_id'])) {
             //用户有传ID并且已经设置自定义ID
             return error("用户ID修改后就不能更改哦");
         }
         //用户有传密码
-        if($password)
-        {
+        if ($password) {
             //如果是修改密码请求
             //获取最新用户信息
-            $user = Db("user")->where(['id'=>$user['id']])->find();
+            $user = Db("user")->where(['id' => $user['id']])->find();
             /*//判断原来是否有设置密码，有设置密码并且有传老密码可通过原密码修改
             if($user['password']&&$old_password)
             {
@@ -489,17 +501,16 @@ class User extends Controller
                     $data['password']=pass($password);
                 }
             }*/
-            $data['password']=pass($password);
+            $data['password'] = pass($password);
 
         }
         $data = array_filter($data);
-        $result = Db("user")->where(['id'=>$user['id']])->update($data);
+        $result = Db("user")->where(['id' => $user['id']])->update($data);
 
-        if($result)
-        {
-            $user=array_merge($user,$data);
+        if ($result) {
+            $user = array_merge($user, $data);
             //更新session里的用户信息
-            session("user",$user);
+            session("user", $user);
 
             return success("修改成功");
         }
@@ -512,15 +523,16 @@ class User extends Controller
      * Date: 2019/10/23
      * Time: 9:49
      */
-    public function getFollow(){
+    public function getFollow()
+    {
         $user = session("user");
         if (!$user) {
             return error("未登录");
         }
         $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
         $follow = Db("user u")
-            ->join("follow f","u.id=f.follow_id",'left')
-            ->join("follow f1","f1.follow_id=u.id and f1.uid = '".$user['id']."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
+            ->join("follow f", "u.id=f.follow_id", 'left')
+            ->join("follow f1", "f1.follow_id=u.id and f1.uid = '" . $user['id'] . "'", "left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
             ->group("u.id")
             ->where("f.uid='{$user['id']}'")
             ->field([
@@ -533,26 +545,28 @@ class User extends Controller
             ->order('follow desc')
             ->page($page, 20)
             ->select();
-        if(!$follow){
+        if (!$follow) {
             return error("暂无数据");
         }
-        return success("成功",$follow);
+        return success("成功", $follow);
     }
+
     /**
      * Notes:获取自己的粉丝列表
      * User: BigNiu
      * Date: 2019/10/23
      * Time: 9:49
      */
-    public function getFans(){
+    public function getFans()
+    {
         $user = session("user");
         if (!$user) {
             return error("未登录");
         }
         $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
         $follow = Db("user u")
-            ->join("follow f","u.id=f.follow_id",'left')
-            ->join("follow f1","f1.follow_id=u.id and f1.uid = '".$user['id']."'","left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
+            ->join("follow f", "u.id=f.follow_id", 'left')
+            ->join("follow f1", "f1.follow_id=u.id and f1.uid = '" . $user['id'] . "'", "left")//视频发布者ID等于被关注人ID并且关注用户ID等于当前用户ID
             ->group("u.id")
             ->where("f.follow_id='{$user['id']}'")
             ->field([
@@ -565,11 +579,12 @@ class User extends Controller
             ->order('follow desc')
             ->page($page, 20)
             ->select();
-        if(!$follow){
+        if (!$follow) {
             return error("暂无数据");
         }
-        return success("成功",$follow);
+        return success("成功", $follow);
     }
+
     /**
      * Notes:退出登录
      * User: BigNiu
@@ -577,55 +592,84 @@ class User extends Controller
      * Time: 14:51
      * @return Json
      */
-    public function getLogout(){
+    public function getLogout()
+    {
         $user = session("user");
-        if($user){
-            Db("user")->where(['id'=>$user['id']])->update(['token'=>null]);
+        if ($user) {
+            Db("user")->where(['id' => $user['id']])->update(['token' => null]);
         }
-        session("user",null);
+        session("user", null);
         return success("退出登录成功");
     }
-    public function postRegister(){
+
+    /**
+     * Notes: 注册账号<br>
+     * User:bigniu <br>
+     * Date:2020-03-12 <br>
+     * Time:14:02:33 <br>
+     * Company:成都市一颗优雅草科技有限公司 <br>
+     * @return Json <br>
+     * @throws DataNotFoundException
+     * @throws DbException
+     * @throws Exception
+     * @throws ModelNotFoundException
+     * @throws \think\exception\PDOException
+     */
+    public function postRegister()
+    {
         //用户不存在，自动注册
         $username = input('username');
         $password = input('password');
+        $mailStr = input("mail");
+        $vcode=input("vcode");
         $invitecode = input('invitecode');
-        $user = Db("user")->where(['username'=>$username])->find();
-        if($user){
+
+        $user = Db("user")->where(['username' => $username])->find();
+        if ($user) {
             return error("该用户名已存在，请重新输入");
         }
+        $user = config('mail_user');
+        $pass = config('mail_pass');
+        $name = config("mail_name");
+        $smtp = config('mail_smtp');
+        $mail = new Mail($user,$pass,$name,$smtp);
+        if(!$mail->verifyCode($mailStr,$vcode)){
+            return error("验证码错误，请重新输入");
+        }
+        //上级绑定
         $parent = NULL;
-
-        if(strlen($invitecode) > 0){
-            $parent = Db('user')->where('invit_code',$invitecode)->where('disable',0)->find();
-            if(!$parent){
+        if (strlen($invitecode) > 0) {
+            $parent = Db('user')->where('invit_code', $invitecode)->where('disable', 0)->find();
+            if (!$parent) {
                 return error('邀请码不正确');
             }
         }
 
         $user = [
-            "username"=>$username,
-            'password'=>pass($password),
-            'parent_id'=>$parent ? $parent['id'] : 0,
-            'invit_code'=>$this->getInvite(),
-            'reg_code'=>$parent ? $parent['invit_code'] : NULL,
-            "create_time"=>date("Y-m-d H:i:s",time()),
-            "head_img"=>'static/image/head.png',
-            "name"=>$username,
-            "token"=>pass($username.time().getRandStr()).$username
+            "username" => $username,
+            'password' => pass($password),
+            'mail'=>$mailStr,
+            'parent_id' => $parent ? $parent['id'] : 0,
+            'invit_code' => $this->getInvite(),
+            'reg_code' => $parent ? $parent['invit_code'] : NULL,
+            "create_time" => date("Y-m-d H:i:s", time()),
+            "head_img" => 'static/image/head.png',
+            "name" => $username,
+            "token" => pass($username . time() . getRandStr()) . $username
         ];
         $id = Db("user")->insertGetId($user);
-        u_log("用户".$username."注册成功",'login');
-        $user['id']=$id;
-        session("user",$user);
+        u_log("用户" . $username . "注册成功", 'login');
+        $user['id'] = $id;
+        session("user", $user);
 
         //执行邀请成功奖励
-        if($parent) $this->invite_do(gold_rate,$parent);
+        if ($parent) $this->invite_do($user, $parent);
 
-        return success("注册成功",$user);
+        return success("注册成功", $user);
     }
 
-    public function getGoldinfo(){
+    public function getGoldinfo()
+    {
         $user = session("user");
         if (!$user) {
             return error("未登录");
@@ -633,22 +677,23 @@ class User extends Controller
         $data = array();
         $data['gold_rate'] = config('gold_rate');
         $data['withdraw_min'] = config('withdraw_min');
-        $data['money'] = Db('user')->where('id',$user['id'])->value('money');
-        return success(NULL,$data);
+        $data['money'] = Db('user')->where('id', $user['id'])->value('money');
+        return success(NULL, $data);
     }
 
-    public function postWithdraw(){
+    public function postWithdraw()
+    {
         $user = session("user");
         if (!$user) {
             return error("未登录");
         }
         $code = input('code');
-        $user = Db('user')->where('id',$user['id'])->where('disable',0)->find();
-        if(!$user){
+        $user = Db('user')->where('id', $user['id'])->where('disable', 0)->find();
+        if (!$user) {
             return error("未找到相应用户");
         }
         $phone = $user['phone'];
-        if(!$phone){
+        if (!$phone) {
             return error("您还未绑定手机号码");
         }
 
@@ -660,42 +705,42 @@ class User extends Controller
         }*/
 
         $money = intval(input('num'));
-        if($money<=0){
+        if ($money <= 0) {
             return error("提现金币数只能为大于0的整数");
         }
         $min = intval(config('withdraw_min'));
-        if($min<=0){
+        if ($min <= 0) {
             return error('当前无法提现，联系管理员');
         }
-        if($money<$min){
-            return error('提现金币数不能低于'.$min.'金币');
+        if ($money < $min) {
+            return error('提现金币数不能低于' . $min . '金币');
         }
-        if($user['money']<$money){
+        if ($user['money'] < $money) {
             return error('剩于金币数不够，无法提现');
         }
         $bank = input('bank');
         $bankname = input('bankname');
         $name = input('name');
         $account = input('account');
-        if(strlen($bank) == 0){
+        if (strlen($bank) == 0) {
             return error('请输入银行名称');
         }
-        if(strlen($bankname) == 0){
+        if (strlen($bankname) == 0) {
             return error('请输入开户银行');
         }
-        if(strlen($name) == 0){
+        if (strlen($name) == 0) {
             return error('请输入开户名称');
         }
-        if(strlen($account) == 0){
+        if (strlen($account) == 0) {
             return error('请输入收款账号');
         }
 
         // 启动事务
         Db::startTrans();
-        try{
+        try {
             $allMoney = $user['money'] - $money;
 
-            if(!Db('user')->where('id',$user['id'])->update(['money'=>$allMoney])){
+            if (!Db('user')->where('id', $user['id'])->update(['money' => $allMoney])) {
                 Db::rollback();
                 return error('提现出错，请稍候再试');
             }
@@ -714,7 +759,7 @@ class User extends Controller
             //添加账变记灵
             $data = array();
             $data['user_id'] = $user['id'];
-            $data['num'] = $money*-1;
+            $data['num'] = $money * -1;
             $data['before_money'] = $user['money'];
             $data['after_money'] = $allMoney;
             $data['info'] = '金币提现';
@@ -723,10 +768,10 @@ class User extends Controller
             $data['created_at'] = date('Y-m-d H:i:s');
             Db('account_change')->insert($data);
 
-            $bankcard = Db('bankcards')->where('user_id',$user['id'])->where('account')->find();
-            if($bankcard){
-                Db('bankcards')->where('id',$bankcard['id'])->update(['name'=>$name,'status'=>1]);
-            }else{
+            $bankcard = Db('bankcards')->where('user_id', $user['id'])->where('account')->find();
+            if ($bankcard) {
+                Db('bankcards')->where('id', $bankcard['id'])->update(['name' => $name, 'status' => 1]);
+            } else {
                 $data = array();
                 $data['user_id'] = $user['id'];
                 $data['bank'] = $bank;
@@ -747,13 +792,14 @@ class User extends Controller
         return error('提现出错，请稍候再试');
     }
 
-    public function getSms(){
+    public function getSms()
+    {
         $user = session("user");
         if (!$user) {
             return error("未登录");
         }
-        $phone = Db('user')->where('id',$user['id'])->where('disable',0)->value('phone');
-        if(!$phone){
+        $phone = Db('user')->where('id', $user['id'])->where('disable', 0)->value('phone');
+        if (!$phone) {
             return error("您还未绑定手机号码");
         }
         if (Sms::sendSms($phone, rand(100000, 999999))) {
@@ -763,62 +809,70 @@ class User extends Controller
 
     }
 
-    public function getWithdrawList(){
+
+    public function getWithdrawList()
+    {
         $user = session("user");
         if (!$user) {
             return error("未登录");
         }
         $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
-        $withdraw = Db("withdraw")->where('user_id',$user['id'])->order('id desc')->page($page, 20)->select();
-        if(!$withdraw){
+        $withdraw = Db("withdraw")->where('user_id', $user['id'])->order('id desc')->page($page, 20)->select();
+        if (!$withdraw) {
             return error("暂无数据");
         }
-        return success("成功",$withdraw);
+        return success("成功", $withdraw);
     }
-    public function test(){
+
+    public function test()
+    {
         echo "test";
     }
-    public function getChangeList(){
+
+    public function getChangeList()
+    {
         $user = session("user");
         if (!$user) {
             return error("未登录");
         }
         $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
-        $change = Db("account_change")->where('user_id',$user['id'])->order('id desc')->page($page, 20)->select();
-        if(!$change){
+        $change = Db("account_change")->where('user_id', $user['id'])->order('id desc')->page($page, 20)->select();
+        if (!$change) {
             return error("暂无数据");
         }
-        return success("成功",$change);
+        return success("成功", $change);
     }
 
-    public function getInviteList(){
+    public function getInviteList()
+    {
         $user = session("user");
         if (!$user) {
             return error("未登录");
         }
         $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
-        $invite = Db("invite")->where('user_id',$user['id'])->order('id desc')->page($page, 20)->select();
-        if(!$invite){
+        $invite = Db("invite")->where('user_id', $user['id'])->order('id desc')->page($page, 20)->select();
+        if (!$invite) {
             return error("暂无数据");
         }
-        foreach ($invite as $key=>$row){
-            $row['user'] = Db('user')->where('id',$row['invite_uid'])->value('name');
+        foreach ($invite as $key => $row) {
+            $row['user'] = Db('user')->where('id', $row['invite_uid'])->value('name');
             $invite[$key] = $row;
         }
-        return success("成功",$invite);
+        return success("成功", $invite);
     }
 
-    public function getCardList(){
+    public function getCardList()
+    {
         $user = session("user");
         if (!$user) {
             return error("未登录");
         }
         $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
-        $cards = Db("bankcards")->where('user_id',$user['id'])->order('id desc')->page($page, 20)->select();
-        if(!$cards){
+        $cards = Db("bankcards")->where('user_id', $user['id'])->order('id desc')->page($page, 20)->select();
+        if (!$cards) {
             return error("暂无数据");
         }
-        return success("成功",$cards);
+        return success("成功", $cards);
     }
 
     /**
@@ -826,33 +880,35 @@ class User extends Controller
      *
      * @return Json
      */
-    public function getCarduseing(){
+    public function getCarduseing()
+    {
         $user = session("user");
         if (!$user) {
             return error("未登录");
         }
         $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
-        $cards = Db("bankcards")->where('user_id',$user['id'])->where('status',1)->order('id desc')->page($page, 20)->select();
-        if(!$cards){
+        $cards = Db("bankcards")->where('user_id', $user['id'])->where('status', 1)->order('id desc')->page($page, 20)->select();
+        if (!$cards) {
             return error("暂无数据");
         }
-        return success("成功",$cards);
+        return success("成功", $cards);
     }
 
     /**
      * 切换银行卡使用状态
      */
-    public function getCardstatus(){
+    public function getCardstatus()
+    {
         $user = session("user");
         if (!$user) {
             return error("未登录");
         }
         $id = input('id/i');
-        $card = Db("bankcards")->where('user_id',$user['id'])->where('id',$id)->find();
-        if(!$card){
+        $card = Db("bankcards")->where('user_id', $user['id'])->where('id', $id)->find();
+        if (!$card) {
             return error('未找到相应银行卡信息');
         }
-        if(Db('bankcards')->where('id',$card['id'])->update(['status'=>$card['status'] == 1 ? 0 : 1])){
+        if (Db('bankcards')->where('id', $card['id'])->update(['status' => $card['status'] == 1 ? 0 : 1])) {
             return success('修改成功');
         }
         return error('修改失败');
@@ -861,17 +917,18 @@ class User extends Controller
     /**
      * 删除银行卡信息
      */
-    public function getDeletecard(){
+    public function getDeletecard()
+    {
         $user = session("user");
         if (!$user) {
             return error("未登录");
         }
         $id = input('id/i');
-        $card = Db("bankcards")->where('user_id',$user['id'])->where('id',$id)->find();
-        if(!$card){
+        $card = Db("bankcards")->where('user_id', $user['id'])->where('id', $id)->find();
+        if (!$card) {
             return error('未找到相应银行卡信息');
         }
-        if(Db('bankcards')->where('id',$card['id'])->delete()){
+        if (Db('bankcards')->where('id', $card['id'])->delete()) {
             return success('删除银行卡成功');
         }
         return error('删除银行卡失败');
@@ -880,7 +937,8 @@ class User extends Controller
     /**
      * 添加银行卡信息
      */
-    public function postAddcard(){
+    public function postAddcard()
+    {
         $user = session("user");
         if (!$user) {
             return error("未登录");
@@ -889,16 +947,16 @@ class User extends Controller
         $bankname = input('bankname');
         $name = input('name');
         $account = input('account');
-        if(strlen($bank) == 0){
+        if (strlen($bank) == 0) {
             return error('请输入银行名称');
         }
-        if(strlen($bankname) == 0){
+        if (strlen($bankname) == 0) {
             return error('请输入开户银行');
         }
-        if(strlen($name) == 0){
+        if (strlen($name) == 0) {
             return error('请输入开户名称');
         }
-        if(strlen($account) == 0){
+        if (strlen($account) == 0) {
             return error('请输入收款账号');
         }
         $data = array();
@@ -908,21 +966,22 @@ class User extends Controller
         $data['name'] = $name;
         $data['account'] = $account;
         $data['status'] = 1;
-        if(Db('bankcards')->insert($data)){
+        if (Db('bankcards')->insert($data)) {
             return success("添加银行卡成功");
         }
         return error('添加银行卡失败');
     }
 
-    public function getCardinfo(){
+    public function getCardinfo()
+    {
         $user = session("user");
         if (!$user) {
             return error("未登录");
         }
         $id = input('id/i');
-        $card = Db('bankcards')->where('id',$id)->where('user_id',$user['id'])->find();
-        if($card){
-            return success(NULL,$card);
+        $card = Db('bankcards')->where('id', $id)->where('user_id', $user['id'])->find();
+        if ($card) {
+            return success(NULL, $card);
         }
         return error('未找到相关信息');
     }
@@ -930,14 +989,15 @@ class User extends Controller
     /**
      * 修改银行卡信息
      */
-    public function postUpdatecard(){
+    public function postUpdatecard()
+    {
         $user = session("user");
         if (!$user) {
             return error("未登录");
         }
         $id = input('id/i');
-        $card = Db('bankcards')->where('id',$id)->where('user_id',$user['id'])->find();
-        if(!$card){
+        $card = Db('bankcards')->where('id', $id)->where('user_id', $user['id'])->find();
+        if (!$card) {
             return error('未找到相关信息');
         }
 
@@ -945,16 +1005,16 @@ class User extends Controller
         $bankname = input('bankname');
         $name = input('name');
         $account = input('account');
-        if(strlen($bank) == 0){
+        if (strlen($bank) == 0) {
             return error('请输入银行名称');
         }
-        if(strlen($bankname) == 0){
+        if (strlen($bankname) == 0) {
             return error('请输入开户银行');
         }
-        if(strlen($name) == 0){
+        if (strlen($name) == 0) {
             return error('请输入开户名称');
         }
-        if(strlen($account) == 0){
+        if (strlen($account) == 0) {
             return error('请输入收款账号');
         }
         $data = array();
@@ -962,7 +1022,7 @@ class User extends Controller
         $data['bankname'] = $bankname;
         $data['name'] = $name;
         $data['account'] = $account;
-        if(Db('bankcards')->where('id',$card['id'])->update($data)){
+        if (Db('bankcards')->where('id', $card['id'])->update($data)) {
             return success("修改银行卡成功");
         }
         return error('修改银行卡失败');

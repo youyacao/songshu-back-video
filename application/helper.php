@@ -1,5 +1,8 @@
 <?php
 
+use FFMpeg\Coordinate\TimeCode;
+use FFMpeg\FFMpeg;
+use PHPMailer\PHPMailer\PHPMailer;
 use think\Image;
 use think\Request;
 
@@ -240,13 +243,42 @@ function getImg($url)
     /**
      * TODO 通过视频地址截取视频片段
      */
-    $path = "uploads/img/".md5($url).".png";
-    if(is_file($path)){
+    $path = "uploads/img/" . md5($url) . ".png";
+    if (is_file($path)) {
         return $path;
     }
-    $cmd = "ffmpeg -i ".str_replace("&","",$url)." -ss 00:00:00 -t 1 ".$path." -y";
-    shell_exec($cmd);
+    $ffmpeg = FFMpeg::create(['ffmpeg.threads' => 4]);
+    $video = $ffmpeg->open($url);
+    $video->frame(TimeCode::fromSeconds(0))->save($path);
     return $path;
+}
+function sendRegisterMail($mail,$code){
+    $title='注册验证【一颗优雅草科技】';
+    $yzmcontent = str_replace("{验证码}", $code, config("sms_template"));
+    return sendMail($mail,$title,$yzmcontent);
+
+}
+function sendMail($recmail, $title, $content, $isHtml = false)
+{
+    $user = 'hwcpo7062039@163.com';
+    $pass = 't5885557157';
+    $name = "一颗优雅草科技";
+    $smtp = 'smtp.163.com';
+
+}
+
+function get_current_host()
+{
+    $current_url = 'http://';
+    if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') {
+        $current_url = 'https://';
+    }
+    if ($_SERVER['SERVER_PORT'] != '80') {
+        $current_url .= $_SERVER['SERVER_NAME'] . ':' . $_SERVER['SERVER_PORT'];
+    } else {
+        $current_url .= $_SERVER['SERVER_NAME'];
+    }
+    return $current_url;
 }
 
 function get_current_url()
@@ -301,36 +333,87 @@ function u_log($msg = "", $type = "info")
         "ip" => getIp(),
         "ua" => getUA(),
         "path" => get_current_url(),
-        "header"=>json_encode(function_exists('getallheaders')?getallheaders():NginxGetAllHeaders(),true),
-        "request_data"=>json_encode(input())
+        "header" => json_encode(function_exists('getallheaders') ? getallheaders() : NginxGetAllHeaders(), true),
+        "request_data" => json_encode(input())
     ];
     Db("user_log")->insert($data);
 }
-function NginxGetAllHeaders(){//获取请求头
+
+function NginxGetAllHeaders()
+{//获取请求头
     $headers = [];
-    foreach ($_SERVER as $name => $value){
-        if (substr($name, 0, 5) == 'HTTP_'){
+    foreach ($_SERVER as $name => $value) {
+        if (substr($name, 0, 5) == 'HTTP_') {
             $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
         }
     }
     return $headers;
 }
-function isLocal(){
-    if(getLocalIp()=='192.168.0.125'||getLocalIp()=='127.0.0.1'||getLocalIp()=='localhost'){
+
+function isLocal()
+{
+    if (getLocalIp() == '192.168.0.125' || getLocalIp() == '127.0.0.1' || getLocalIp() == 'localhost') {
         return true;
     }
     return false;
 }
-function typeToName($type){
-    $TYPE = array(0=>"视频",1=>"图文");
+
+function typeToName($type)
+{
+    $TYPE = array(0 => "视频", 1 => "图文");
     return $TYPE[$type];
 }
-function mkdirs($path){
-    if(!is_dir($path)){
+
+function mkdirs($path)
+{
+    if (!is_dir($path)) {
         mkdirs(dirname($path));
-        if(!mkdir($path, 0777)){
+        if (!mkdir($path, 0777)) {
             return false;
         }
     }
     return true;
+}
+
+function doRequest($url, $param = array())
+{
+    $urlinfo = parse_url($url);
+    $host = $urlinfo['host'];
+
+    $path = $urlinfo['path'];
+
+    $query = isset($param) ? http_build_query($param) : '';
+    $port = 80;
+    $errno = 0;
+    $errstr = '';
+    $timeout = 10;
+    $fp = @fsockopen($host, $port, $errno, $errstr, $timeout);
+    if (!$fp) {
+        echo 'error fsockopen';
+        exit;
+    } else {
+        echo "connect success\n";
+
+    }
+    stream_set_blocking($fp, 0); //非阻塞
+    stream_set_timeout($fp, 1);//响应超时时间（S）
+    $out = "POST " . $path . " HTTP/1.1\r\n";
+    $out .= "host:" . $host . "\r\n";
+    $out .= "content-length:" . strlen($query) . "\r\n";
+    $out .= "content-type:application/x-www-form-urlencoded\r\n";
+    $out .= "connection:close\r\n\r\n";
+    $out .= $query;
+    $result = @fwrite($fp, $out);
+    @fclose($fp);
+    var_dump($result);
+    return $result;
+}
+
+function watermark($path)
+{
+    $url = get_current_host() . '/index/index/video';
+    $param = array(
+        'path' => $path,
+    );
+    doRequest($url, $param);
 }

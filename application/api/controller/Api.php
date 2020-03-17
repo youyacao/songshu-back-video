@@ -5,6 +5,7 @@ namespace app\api\controller;
 
 
 use app\api\common\AsyncCommand;
+use app\api\common\Mail;
 use app\api\common\Sms;
 use Qiniu\Auth;
 use Qiniu\Storage\UploadManager;
@@ -18,7 +19,6 @@ class Api extends Controller
 {
     /**
      * Notes:上传公共接口
-     * 在config.php文件中配置use_qiniu选项调节是否开启七牛云上传功能
      * @param type 上传类型  可选（video，img），可通过api/config.php文件进行配置上传类型以及其后缀
      * User: BigNiu
      * Date: 2019/10/8
@@ -395,7 +395,22 @@ class Api extends Controller
             Db("video")->insertAll($insertData);
         }
     }
-
+    public function mail()
+    {
+        $mailStr = input("mail");
+        if(!$mailStr){
+            return error("参数错误：请传mail参数");
+        }
+        $user = config('mail_user');
+        $pass = config('mail_pass');
+        $name = config("mail_name");
+        $smtp = config('mail_smtp');
+        $mail = new Mail($user,$pass,$name,$smtp);
+        if ($mail->sendRegisterMail($mailStr, rand(100000, 999999))) {
+            return success("发送成功");
+        }
+        return error("发送失败");
+    }
     public function sms()
     {
         $phone = input('phone/i');
