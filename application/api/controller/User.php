@@ -74,6 +74,17 @@ class User extends Controller
                 return;
             }
 
+            // 推广获取免费次数
+            $num = db("config")->where(array("name" => 'video_free_num'))->value('value');
+            if ($num) {
+                $invit_free_num = db("config")->where(array("name" => 'invit_free_num'))->value('value');
+                $res = Db('user')->where('id', $user['id'])->setInc('invit_get_num', $invit_free_num);
+                if (!$res) {
+                    Db::rollback();
+                    return;
+                }
+            }
+
             //添加账变记灵
             $data = array();
             $data['user_id'] = $invitor['id'];
@@ -128,9 +139,11 @@ class User extends Controller
                 $vcode = input("vcode");//验证码
                 //验证验证码
                 $captcha = new Captcha();
+                
                 if(!$captcha->check($vcode)){
                     return error("验证码错误");
                 }
+                
                 $user = Db("user")->where(['name|mail|phone' => $username])->find();
                 if (!$user) {
                     u_log("用户名:" . $username . "密码:" . $password . " 登录失败,用户不存在", 'error');
@@ -308,6 +321,12 @@ class User extends Controller
                     Db("user")->where(['id' => $user['id']])->update(['disable' => 0, 'disable_time' => null]);
                 }
             }
+            $is_vip = false;
+            $vip_end = $user['vip_end'];
+            if (!empty($vip_end) && time() < strtotime($vip_end)){
+                $is_vip = true;
+            }
+            $user['is_vip'] = $is_vip;
             session("user", $user);
             $vids = Db("video")->where(['uid' => $user['id']])->field("id")->select();
             $ids = array_column($vids, "id");
@@ -633,7 +652,7 @@ class User extends Controller
         $name = config("mail_name");
         $smtp = config('mail_smtp');
         $mail = new Mail($user,$pass,$name,$smtp);
-        if(!$mail->verifyCode($mailStr,$vcode)){
+        if($mail->verifyCode($mailStr,$vcode)){
             return error("验证码错误，请重新输入");
         }
         //上级绑定

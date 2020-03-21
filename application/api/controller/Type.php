@@ -73,4 +73,9 @@ class Type extends Controller
         return error("添加失败");
     }
 
+    public function getVipShopList(){
+        $list = Db('vip_shop')->select();
+        return success('',$list);
+    }
+
 }

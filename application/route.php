@@ -15,6 +15,8 @@ Route::controller('video','api/video');
 
 Route::controller('type','api/type');
 
+Route::controller('pay','api/pay');
+
 Route::controller('user','api/user');
 
 Route::controller('skr_comment','api/skrComment');

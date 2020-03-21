@@ -42,7 +42,20 @@ class Video
         if (!$view_history) {
             $data['time'] = time();
             Db("view_history")->insertGetId($data);
-        }
+            //获取免费观看个数
+            $num = (int)db("config")->where(array("name" => 'video_free_num'))->value('value');
+            if ($num){
+                $has_see_num = Db("view_history")->where(["uid" => $user['id']])->count();
+                $invit_get_num = Db('user')->where('id', $user['id'])->value('invit_get_num');
+                if ($has_see_num > $num){
+                    if($invit_get_num){
+                        Db('user')->where('id', $user['id'])->setDec('invit_get_num');
+                    }else{
+                        return error("免费次数用完，推广获得免费观看次数或者开通VIP");
+                    }
+                }
+            } 
+        }     
         return success("成功");
     }
 
