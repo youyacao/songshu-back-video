@@ -23,7 +23,12 @@ class Pay extends Controller
         if (empty($shop_info)){
             return error("参数不对，请重试！");
         }
+        $user = session("user");
+        if (empty($user)){
+            return error("请先登录！");
+        }
         $params = [];
+        $params['uid']  = $user['id'];
         $params['shop_id']  = $sid;
         $params['amount']   = $shop_info['price'];
         $params['payType']  = '12';
