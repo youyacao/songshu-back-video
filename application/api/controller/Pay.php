@@ -16,8 +16,6 @@ class Pay extends Controller
 {
  
     public function getPayment(){
-
-        $payConfig = getPayConfig();
         $sid = request()->param('sid');
         $shop_info = Db('vip_shop')->where('id', $sid)->find();
         if (empty($shop_info)){
@@ -27,6 +25,7 @@ class Pay extends Controller
         if (empty($user)){
             return error("请先登录！");
         }
+        $payConfig = getPayConfig();
         $params = [];
         $params['uid']  = $user['id'];
         $params['shop_id']  = $sid;
@@ -36,14 +35,16 @@ class Pay extends Controller
         $params['ip'] = request()->ip();
         $params['appKey'] = $payConfig['pay_memberid'];
         $order_id = Db('vip_log')->insertGetId($params);
+        unset($params['uid']);
+        unset($params['shop_id']);
         $params['customerOrderId'] = $order_id;
         $params['notifyUrl'] = request()->domain().'/pay/notify';
         $params['token'] = paySign($params, $payConfig['pay_key']);
         $headers = [];
         $headers['Content-Type'] = 'application/json';
-        $result = curl($payConfig['pay_submit_url'], $params, $headers);
+        $result = curl($payConfig['pay_submit_url'], json_encode($params), $headers);
         $res = json_decode($result, true);
-        Log::record($result);
+        Log::write($result,'notice');
         if ($res['code'] != 'success'){
             return error("下单失败，请重试！");
         }

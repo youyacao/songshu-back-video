@@ -14,10 +14,17 @@
 if (!function_exists('paySign')) {
     function paySign($params, $appSecret)
     {
-        $params['appSecret'] = $appSecret;
+        unset($params['uid']);
+        unset($params['shop_id']);
+        unset($params['ip']);
         unset($params['token']);
         ksort($params);
-        return strtoupper(md5(http_build_query($params)));
+        $str = '';
+        foreach($params as $key => $val){
+            $str .= $key.'='.$val.'&';
+        }
+        $str .= 'appSecret='.$appSecret;
+        return strtoupper(md5($str));
     }
 }
 
