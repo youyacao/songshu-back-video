@@ -15,11 +15,11 @@ return [
     // 服务器地址
     'hostname'        => '127.0.0.1',
     // 数据库名
-    'database'        => 'douyin_com',
+    'database'        => 'dyplus_me',
     // 用户名
-    'username'        => 'doyin_com',
+    'username'        => 'dyplus_me',
     // 密码
-    'password'        => 'Zt123456',
+    'password'        => 'JmTjrprHLftcR67S',
     // 端口
     'hostport'        => '',
     // 连接dsn

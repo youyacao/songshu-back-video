@@ -3,3 +3,5 @@
 *.zip
 runtime
 public/video/
+.user.ini
+.htaccess
