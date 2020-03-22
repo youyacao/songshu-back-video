@@ -340,7 +340,7 @@ class User extends Controller
             $user['invite_count'] = Db('invite')->where('user_id', $user['id'])->count();
             // 非会员
             $can_see_num = 0;
-            if (!$is_vip)
+            if (!$is_vip){
                 // 可免费观看视频次数
                 $num = (int)db("config")->where(array("name" => 'video_free_num'))->value('value');
                 $has_see_num = Db("view_history")->where(["uid" => $user['id']])->count();
