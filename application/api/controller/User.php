@@ -346,7 +346,7 @@ class User extends Controller
                 $has_see_num = Db("view_history")->where(["uid" => $user['id']])->count();
                 $invit_get_num = Db('user')->where('id', $user['id'])->value('invit_get_num');
                 $can_see_num = $num + $invit_get_num - $has_see_num;
-                $can_see_num = ($can_see_num > 0) ? $$can_see_num:0;
+                $can_see_num = ($can_see_num > 0) ? $can_see_num:0;
             }
             $user['can_see_num'] = $can_see_num;
             u_log("用户" . $user['name'] . "(" . $user['id'] . ")通过Token验证登录成功");
