@@ -338,6 +338,17 @@ class User extends Controller
             $user['fans_count'] = $fans_count;// 粉丝数
             $user['follow_count'] = $follow_count;//关注数
             $user['invite_count'] = Db('invite')->where('user_id', $user['id'])->count();
+            // 非会员
+            $can_see_num = 0;
+            if (!$is_vip)
+                // 可免费观看视频次数
+                $num = (int)db("config")->where(array("name" => 'video_free_num'))->value('value');
+                $has_see_num = Db("view_history")->where(["uid" => $user['id']])->count();
+                $invit_get_num = Db('user')->where('id', $user['id'])->value('invit_get_num');
+                $can_see_num = $num + $invit_get_num - $has_see_num;
+                $can_see_num = ($can_see_num > 0) ? $$can_see_num:0;
+            }
+            $user['can_see_num'] = $can_see_num;
             u_log("用户" . $user['name'] . "(" . $user['id'] . ")通过Token验证登录成功");
             return success("验证成功", $user);
         }
