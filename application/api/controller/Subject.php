@@ -52,7 +52,7 @@ class Subject
         return success("获取成功", $list, $page, $total);
     }
 
-    public function getSubjectResultList(){
+    public function getResult(){
         $user = session("user");
         if (!$user) {
             return error("未登录");
