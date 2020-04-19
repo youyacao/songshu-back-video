@@ -26,8 +26,6 @@ class Subject
             return error("未登录");
         }
         $vid = intval(input('vid'));
-        $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
-        $pageSize = input("pageSize/i", 10) <= 10 ? 10 : input("pageSize/i", 10);
         $video = Db("video")->where(['id' => $vid])->find();
         if ($video['is_subject'] == '0') {
             return error("没有开启答题");
@@ -40,7 +38,6 @@ class Subject
         }
         $list = Db("video_subject")
             ->where($where)
-            ->page($page, $pageSize)
             ->order("seconds asc")
             ->select();
         foreach($list as &$val) {
@@ -103,6 +100,10 @@ class Subject
         if($vid){
             $where['vid'] = $vid;
         }
+        $list = Db("video_subject")
+            ->where($where)
+            ->order("seconds asc")
+            ->select();
         $total = Db("video_subject")
             ->where($where)
             ->count();
@@ -111,10 +112,9 @@ class Subject
         $data = [];
         // 启动事务
         Db::startTrans();
-        foreach($results as $val) {
-            $subject = Db("video_subject")->where(['id' => $val['subject_id']])->find();
+        foreach($results as $key => $result) {
+            $subject = $list[$key];
             $true_answer = $subject['true_answer'];
-            $result = $val['result'];
             if ($result == $true_answer) {
                 $true_num++;
                 $gold = intval($subject['gold']);
