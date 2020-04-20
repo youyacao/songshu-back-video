@@ -115,12 +115,11 @@ class Subject
         foreach($results as $key => $result) {
             $subject = $list[$key];
             $true_answer = $subject['true_answer'];
-            if ($result == $true_answer) {
+            if ($result !== '' && $result == $true_answer) {
                 $true_num++;
                 $gold = intval($subject['gold']);
                 $all_gold += $gold;
-            }
-               
+            }   
         }
         $data['vid'] = $vid;
         $data['uid'] = $user['id'];
