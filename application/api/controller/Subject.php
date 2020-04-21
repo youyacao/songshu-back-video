@@ -46,7 +46,7 @@ class Subject
         $total = Db("video_subject")
             ->where($where)
             ->count();
-        return success("获取成功", $list, $page, $total);
+        return success("获取成功", $list, 0, $total);
     }
 
     public function getResult(){
@@ -72,7 +72,7 @@ class Subject
             ->join("video v", "vsr.vid=v.id", "left")
             ->where($where)
             ->count();
-        return success("获取成功", $list, 0, $total);
+        return success("获取成功", $list, $page, $total);
     }
 
     /**
@@ -86,8 +86,9 @@ class Subject
         if (!$user) {
             return error("未登录");
         }
+        
         $vid = intval(input('vid'));
-        $results = input('results');
+        $results = input('results/a');
         $video = Db("video")->where(['id' => $vid])->find();
         if (empty($video)) {
             return error("视频不存在");
@@ -104,6 +105,7 @@ class Subject
             ->where($where)
             ->order("seconds asc")
             ->select();
+      
         $total = Db("video_subject")
             ->where($where)
             ->count();
@@ -123,12 +125,14 @@ class Subject
         }
         $data['vid'] = $vid;
         $data['uid'] = $user['id'];
+      
         $data['results'] = json_encode($results);
         $data['true_num'] = $true_num;
         $data['error_num'] = $total - $true_num;
         $data['all_gold'] = $all_gold;
         $data['update_time'] = time();
         $data['create_time'] = time();
+  		  
         $res_id = Db("video_subject_result")->insertGetId($data);
         if (!$res_id) {
             Db::rollback();
