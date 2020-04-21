@@ -72,7 +72,7 @@ class Subject
             ->join("video v", "vsr.vid=v.id", "left")
             ->where($where)
             ->count();
-        return success("获取成功", $list, $page, $total);
+        return success("获取成功", $list, 0, $total);
     }
 
     /**
