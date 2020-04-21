@@ -57,18 +57,18 @@ class Subject
         $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
         $pageSize = input("pageSize/i", 10) <= 10 ? 10 : input("pageSize/i", 10);
         $where = [];
-        $where['vsr.user_id'] = 1;
+        $where['vsr.uid'] = $user['id'];
         $list = Db("video_subject_result vsr")
             ->join("video v", "vsr.vid=v.id", "left")
             ->where($where)
             ->page($page, $pageSize)
             ->order("vsr.id desc")
-            ->field(['vsr.*','v.title','v.true_answer'])
+            ->field(['vsr.*','v.title'])
             ->select();
         foreach($list as &$val) {
             $val['results'] = json_decode($val['results'], true);
         }
-        $total = Db("video_subject_result")
+        $total = Db("video_subject_result vsr")
             ->join("video v", "vsr.vid=v.id", "left")
             ->where($where)
             ->count();
