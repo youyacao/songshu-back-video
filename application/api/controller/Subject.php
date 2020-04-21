@@ -129,7 +129,7 @@ class Subject
         $data['all_gold'] = $all_gold;
         $data['update_time'] = time();
         $data['create_time'] = time();
-        $res_id = Db("video_subject_answer")->insertGetId($data);
+        $res_id = Db("video_subject_result")->insertGetId($data);
         if (!$res_id) {
             Db::rollback();
             return error("答题提交失败");
