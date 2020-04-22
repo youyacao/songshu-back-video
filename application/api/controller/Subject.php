@@ -74,6 +74,7 @@ class Subject
             ->select();
         foreach($list as &$val) {
             $val['results'] = json_decode($val['results'], true);
+            $val['create_time'] = date('Y-m-d H:i:s', $val['create_time']);
         }
         $total = Db("video_subject_result vsr")
             ->join("video v", "vsr.vid=v.id", "left")
