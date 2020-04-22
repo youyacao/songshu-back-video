@@ -162,6 +162,6 @@ class Subject
         }
         // 提交事务
         Db::commit();
-        return success("答题提交成功");
+        return success("提交成功，共答对 {$true_num} 题，得到 {$all_gold} 金币");
     }
 }
