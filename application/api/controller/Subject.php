@@ -88,7 +88,8 @@ class Subject
         $data = [
             'list' => $list,
             'page' => $page,
-            'total'=> $total
+            'total'=> $total,
+            'page_count' => ceil($total/$pageSize)
         ];
         return success("获取成功", $data);
     }
