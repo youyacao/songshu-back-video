@@ -35,7 +35,7 @@ class Subject
         $map['vid'] = $vid;
         $exits = Db("video_subject_result")->where($map)->count();
         if ($exits) {
-            return error("已经回答过该题");
+            return error("已经回答");
         }
 
         $where = [];
