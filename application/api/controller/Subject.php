@@ -30,6 +30,13 @@ class Subject
         if ($video['is_subject'] == '0') {
             return error("没有开启答题");
         }
+        $map = [];
+        $map['uid'] = $user['id'];
+        $map['vid'] = $vid;
+        $exits = Db("video_subject_result")->where($map)->count();
+        if ($exits) {
+            return error("已经回答过该题");
+        }
 
         $where = [];
         $where['status'] = 1;
