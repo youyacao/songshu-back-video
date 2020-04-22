@@ -116,7 +116,8 @@ class Api extends Controller
                 if ($type == 'video') {
                     $data = [
                         'url' => $url,
-                        'img' => getImg($url)
+                        //'img' => getImg($url)
+                        'img' => $url.'?vframe/jpg/offset/1'
                     ];
                     return success("上传成功", $data);
                 } else {
