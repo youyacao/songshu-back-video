@@ -53,7 +53,12 @@ class Subject
         $total = Db("video_subject")
             ->where($where)
             ->count();
-        return success("获取成功", $list, 0, $total);
+        $data = [
+            'list' => $list,
+            'page' => 0,
+            'total'=> $total
+        ];
+        return success("获取成功", $data);
     }
 
     public function getResult(){
@@ -80,7 +85,12 @@ class Subject
             ->join("video v", "vsr.vid=v.id", "left")
             ->where($where)
             ->count();
-        return success("获取成功", $list, $page, $total);
+        $data = [
+            'list' => $list,
+            'page' => $page,
+            'total'=> $total
+        ];
+        return success("获取成功", $data);
     }
 
     /**
