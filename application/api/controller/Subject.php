@@ -103,7 +103,7 @@ class Subject
     public function postAnswer(){
         $user = session("user");
         if (!$user) {
-            return error("未登录");
+            return error("尚未登录，请登录后进行答题操作");
         }
         $vid = intval(input('vid'));
         $results = input('results/a');
