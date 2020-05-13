@@ -663,7 +663,7 @@ class User extends Controller
         $name = config("mail_name");
         $smtp = config('mail_smtp');
         $mail = new Mail($user,$pass,$name,$smtp);
-        if($mail->verifyCode($mailStr,$vcode)){
+        if(!$mail->verifyCode($mailStr,$vcode)){
             return error("验证码错误，请重新输入");
         }
         //上级绑定
