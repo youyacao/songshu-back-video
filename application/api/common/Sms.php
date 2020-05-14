@@ -191,8 +191,9 @@ class Sms
         $appkey = config("tencent_sms_apikey");
         $templateId = 7839;
         $params = ["5678"];
+        $smsSign = "腾讯云";
         $ssender = new SmsSingleSender($appid, $appkey);
-        $result = $ssender->sendWithParam("86", $data['mobile'], $templateId, $params);  // 签名参数不能为空串
+        $result = $ssender->sendWithParam("86", $data['mobile'], $templateId, $params, $smsSign);  // 签名参数不能为空串
         $res = json_decode($result);
         echo $result;
     }
