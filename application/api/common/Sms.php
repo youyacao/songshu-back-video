@@ -5,6 +5,7 @@ namespace app\api\common;
 
 
 use think\Config;
+use Qcloud\Sms\SmsSingleSender;
 
 class Sms
 {
@@ -122,6 +123,8 @@ class Sms
         $sms_server = config('sms_server');
         if($sms_server == 'mysubmail'){
             return $this->mysubmail($data);
+        }elseif ($sms_server == 'tencent'){
+            return $this->tencent($data);
         }else{
             return $this->dingdong($data);
         }
@@ -180,5 +183,17 @@ class Sms
             return true;
         }
         return false;
+    }
+
+    private function tencent($data){
+        // 短信应用SDK AppID
+        $appid = config("tencent_sms_appid"); // 1400开头
+        $appkey = config("tencent_sms_apikey");
+        $templateId = 7839;
+        $params = ["5678"];
+        $ssender = new SmsSingleSender($appid, $appkey);
+        $result = $ssender->sendWithParam("86", $data['mobile'], $templateId, $params);  // 签名参数不能为空串
+        $res = json_decode($result);
+        echo $result;
     }
 }
