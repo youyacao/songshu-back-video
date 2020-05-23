@@ -93,6 +93,7 @@ class Video
                     "v.title",//视频标题
                     "v.url",//视频链接
                     "v.img",//视频图片
+                    "v.need_gold",
                     "v.create_time",//视频创建时间
                     "v.uid",//视频对应用户ID
                     "v.state",//视频状态
@@ -134,6 +135,7 @@ class Video
                     "v.title",//视频标题
                     "v.url",//视频链接
                     "v.img",//视频图片
+                    "v.need_gold",
                     "v.create_time",//视频创建时间
                     "v.uid",//视频对应用户ID
                     "v.state",//视频状态
@@ -198,6 +200,7 @@ class Video
                 "v.title",//视频标题
                 "v.url",//视频链接
                 "v.img",//视频图片
+                "v.need_gold",
                 "v.create_time",//视频创建时间
                 "v.uid",//视频对应用户ID
                 "v.state",//视频状态
@@ -265,6 +268,7 @@ class Video
                 "v.title",//视频标题
                 "v.url",//视频链接
                 "v.img",//视频图片
+                "v.need_gold",
                 "v.create_time",//视频创建时间
                 "v.uid",//视频对应用户ID
                 "v.state",//视频状态
@@ -317,6 +321,7 @@ class Video
                 "v.title",//视频标题
                 "v.url",//视频链接
                 "v.img",//视频图片
+                "v.need_gold",
                 "v.create_time",//视频创建时间
                 "v.uid",//视频对应用户ID
                 "v.state",//视频状态
@@ -365,6 +370,7 @@ class Video
                 "v.title",//视频标题
                 "v.url",//视频链接
                 "v.img",//视频图片
+                "v.need_gold",
                 "v.create_time",//视频创建时间
                 "v.uid",//视频对应用户ID
                 "v.state",//视频状态
@@ -461,7 +467,14 @@ class Video
                 }
                 break;
         }
-
+        foreach ($data as &$value) {
+            $is_buy = 0;
+            if ($user) {
+                $res = Db('account_change')->where('user_id', $user['id'])->where('data_type', 'buy_video')->where('data_id', $value['id'])->find();
+                $is_buy = $res ? 1:0;
+            }
+            $value['is_buy'] = $is_buy;
+        }
         if (!$data) {
             return error("暂无数据");
         }
@@ -554,6 +567,7 @@ class Video
                 "v.title",//视频标题
                 "v.url",//视频链接
                 "v.img",//视频图片
+                "v.need_gold",
                 "v.create_time",//视频创建时间
                 "v.uid",//视频对应用户ID
                 "v.state",//视频状态
@@ -587,5 +601,43 @@ class Video
             return success("删除成功");
         }
         return error("删除失败");
+    }
+
+    public function postBuy()
+    {
+        $user = session("user");
+        if (!$user) {
+            return error("未登录");
+        }
+        $vid = input("vid");
+        $info = Db("video")->whereIn('id', $vid)->find();
+        if (empty($info)) {
+            return error("视频不存在");
+        }
+        if ($info['need_gold'] == 0) {
+            return error("该视频不需要购买");
+        }
+        if ($info['need_gold'] > $user['money']) {
+            return error("金币不够");
+        }
+        $money = $user['money'] - $info['need_gold'];
+        if (!Db('user')->where('id', $user['id'])->update(['money' => $money])) {
+            return error("更新金币失败");
+        }
+        //添加账变记灵
+        $data = array();
+        $data['user_id'] = $user['id'];
+        $data['num'] = -$info['need_gold'];
+        $data['before_money'] = $user['money'];
+        $data['after_money'] = $money;
+        $data['info'] = '购买视频';
+        $data['data_id'] = $vid;
+        $data['data_type'] = 'buy_video';
+        $data['created_at'] = date('Y-m-d H:i:s');
+        $res = Db('account_change')->insert($data);
+        if (!$res) {
+            return error("购买失败");
+        }
+        return success("购买成功");
     }
 }
