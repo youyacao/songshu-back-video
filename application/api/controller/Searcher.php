@@ -108,6 +108,7 @@ class Searcher
                 "v.title",//视频标题
                 "v.url",//视频链接
                 "v.img",//视频图片
+                "v.need_gold",
                 "v.create_time",//视频创建时间
                 "v.uid",//视频对应用户ID
                 "u.name",//视频发布人名称
@@ -118,6 +119,14 @@ class Searcher
                 "count(distinct h.id) view_count",//播放次数
             ])
             ->select();
+        foreach ($list as &$value) {
+            $is_buy = 0;
+            if ($user) {
+                $res = Db('account_change')->where('user_id', $user['id'])->where('data_type', 'buy_video')->where('data_id', $value['id'])->find();
+                $is_buy = $res ? 1:0;
+            }
+            $value['is_buy'] = $is_buy;
+        }
         if ($list) {
             return success("搜索成功", $list);
         }
