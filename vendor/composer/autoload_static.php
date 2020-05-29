@@ -35,6 +35,10 @@ class ComposerStaticInit2bc4f313dba415539e266f7ac2c87dcd
             'Psr\\Log\\' => 8,
             'PHPMailer\\PHPMailer\\' => 20,
         ),
+        'O' => 
+        array (
+            'OSS\\' => 4,
+        ),
         'D' => 
         array (
             'Doctrine\\Common\\Cache\\' => 22,
@@ -77,6 +81,10 @@ class ComposerStaticInit2bc4f313dba415539e266f7ac2c87dcd
         'PHPMailer\\PHPMailer\\' => 
         array (
             0 => __DIR__ . '/..' . '/phpmailer/phpmailer/src',
+        ),
+        'OSS\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/aliyuncs/oss-sdk-php/src/OSS',
         ),
         'Doctrine\\Common\\Cache\\' => 
         array (

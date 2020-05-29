@@ -14,6 +14,8 @@ use think\Controller;
 use think\exception\ErrorException;
 use think\File;
 use think\Image;
+use OSS\OssClient;
+use OSS\Core\OssException;
 
 class Api extends Controller
 {
@@ -33,9 +35,13 @@ class Api extends Controller
         if (config("use_qiniu") == '1') {
             return $this->upload_qiniu();
         }
+        if (config("use_aliyun") == '1') {
+            return $this->upload_aliyun();
+        }
         if (config("use_ftp") == '1') {
             return $this->upload_ftp();
         }
+
         $type = input("type");
         $config = Config::get($type);
         if (!$config) {
@@ -127,6 +133,49 @@ class Api extends Controller
                     return success("上传成功", $data);
                 }
                 //返回图片的完整URL
+                return success("上传成功", $data);
+            }
+        }
+    }
+
+    /**
+     * 阿里云上传
+     */
+    public function upload_aliyun()
+    {
+        if (request()->isPost()) {
+            $type = input("type");
+            $file = request()->file('file');
+            // 要上传图片的本地路径
+            $filePath = $file->getRealPath();
+            $ext = pathinfo($file->getInfo('name'), PATHINFO_EXTENSION);  //后缀
+            //获取当前控制器名称
+            // 上传到七牛后保存的文件名
+            $key = substr(md5($file->getRealPath()), 0, 5) . date('YmdHis') . rand(0, 9999) . '.' . $ext;
+
+            $accessKey = config('aliyun_accesskey');
+            $secretKey = config('aliyun_secretkey');
+            $endpoint = "http://oss-cn-beijing.aliyuncs.com";
+            $bucket = config('aliyun_bucket');
+            $domain = config('aliyun_domain');
+
+            try{
+                $ossClient = new OssClient($accessKey, $secretKey, $endpoint);
+                $ossClient->putObject($bucket, $key, $filePath);
+            } catch(OssException $e) {
+                return error($e->getMessage());
+            }
+            $url = "http://" . $domain . "/" . $key;
+            if ($type == 'video') {
+                $data = [
+                    'url' => $url,
+                    'img' => $url.'?x-oss-process=video/snapshot,t_1000,f_jpg,w_800,h_600,m_fast'
+                ];
+                return success("上传成功", $data);
+            } else {
+                $data = [
+                    'url' => $url
+                ];
                 return success("上传成功", $data);
             }
         }
