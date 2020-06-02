@@ -155,17 +155,17 @@ class Api extends Controller
 
             $accessKey = config('aliyun_accesskey');
             $secretKey = config('aliyun_secretkey');
-            $endpoint = "http://oss-cn-beijing.aliyuncs.com";
+            $endpoint = "http://oss-accelerate.aliyuncs.com";
             $bucket = config('aliyun_bucket');
             $domain = config('aliyun_domain');
 
             try{
                 $ossClient = new OssClient($accessKey, $secretKey, $endpoint);
-                $ossClient->putObject($bucket, $key, $filePath);
+                $ossClient->uploadFile($bucket, $key, $filePath);
             } catch(OssException $e) {
                 return error($e->getMessage());
             }
-            $url = "http://" . $domain . "/" . $key;
+            $url = $domain . $key;
             if ($type == 'video') {
                 $data = [
                     'url' => $url,
