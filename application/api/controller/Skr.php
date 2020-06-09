@@ -79,9 +79,11 @@ class Skr extends Controller
             if($uSkr==0)
             {
                 u_log("用户".$user['name']."(".$user['id'].")取消点赞".typeToName($type)."(".$vid.")>成功");
+                Db('video')->where('id', $vid)->setDec('skr_count');
                 return success("取消点赞成功");
             }
             u_log("用户".$user['name']."(".$user['id'].")点赞".typeToName($type)."(".$vid.")>成功");
+            Db('video')->where('id', $vid)->setInc('skr_count');
             return success("点赞成功");
         }
         if($uSkr==0)

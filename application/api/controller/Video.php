@@ -99,7 +99,7 @@ class Video
                     "v.state",//视频状态
                     "u.name",//视频发布人名称
                     "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
-                    "count(distinct s1.id) skr_count",//点赞数
+                    "v.skr_count",//点赞数
                     "ifnull(s.skr,'0') skr",//当前用户是否点赞
                     "ifnull(co.create_time,'0') collection",//当前用户是否收藏
                     "ifnull(f.id,'0') follow",//当前用户是否关注
@@ -141,7 +141,7 @@ class Video
                     "v.state",//视频状态
                     "u.name",//视频发布人名称
                     "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
-                    "count(distinct s1.id) skr_count",//点赞数
+                    "v.skr_count",//点赞数
                     "ifnull(s.skr,'0') skr",//当前用户是否点赞
                     "ifnull(co.create_time,'0') collection",//当前用户是否收藏
                     "ifnull(f.id,'0') follow",//当前用户是否关注
@@ -206,7 +206,7 @@ class Video
                 "v.state",//视频状态
                 "u.name",//视频发布人名称
                 "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
-                "count(distinct s1.id) skr_count",//点赞数
+                "v.skr_count",//点赞数
                 "ifnull(s.skr,'0') skr",//当前用户是否点赞
                 "ifnull(co.create_time,'0') collection",//当前用户是否收藏
                 "ifnull(f.id,'0') follow",//当前用户是否关注
@@ -274,7 +274,7 @@ class Video
                 "v.state",//视频状态
                 "u.name",//视频发布人名称
                 "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
-                "count(distinct s1.id) skr_count",//点赞数
+                "v.skr_count",//点赞数
                 "ifnull(s.skr,'0') skr",//当前用户是否点赞
                 "ifnull(co.create_time,'0') collection",//当前用户是否收藏
                 "ifnull(f.id,'0') follow",//当前用户是否关注
@@ -327,7 +327,7 @@ class Video
                 "v.state",//视频状态
                 "u.name",//视频发布人名称
                 "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
-                "count(distinct s1.id) skr_count",//点赞数
+                "v.skr_count",//点赞数
                 "ifnull(s.skr,'0') skr",//当前用户是否点赞
                 "ifnull(co.create_time,'0') collection",//当前用户是否收藏
                 "ifnull(f.id,'0') follow",//当前用户是否关注
@@ -376,7 +376,7 @@ class Video
                 "v.state",//视频状态
                 "u.name",//视频发布人名称
                 "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
-                "count(distinct s1.id) skr_count",//点赞数
+                "v.skr_count",//点赞数
                 "ifnull(s.skr,'0') skr",//当前用户是否点赞
                 "ifnull(co.create_time,'0') collection",//当前用户是否收藏
                 "ifnull(f.id,'0') follow",//当前用户是否关注
@@ -573,7 +573,7 @@ class Video
                 "v.state",//视频状态
                 "u.name",//视频发布人名称
                 "ifnull(u.head_img,'static/image/head.png') head_img",//用户头像
-                "count(distinct s1.id) skr_count",//点赞数
+                "v.skr_count",//点赞数
                 "ifnull(s.skr,'0') skr",//当前用户是否点赞
                 "ifnull(co.create_time,'0') collection",//当前用户是否收藏
                 "ifnull(f.id,'0') follow",//当前用户是否关注
