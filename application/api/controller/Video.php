@@ -504,11 +504,14 @@ class Video
         $title = input("title");//标题
         $url = input("url");//视频链接
         $type = input("type");//视频类型
+        $img = $url.'?vframe/jpg/offset/1';
+        /**
         $img = getImg($url);//通过视频存储路径获取视略缩图"1.png";//
         if (!is_file($img)) {
             u_log("用户" . $user['name'] . "(" . $user['id'] . ")发布视频失败('生成略缩图失败')", "error");
             return error("生成略缩图失败!");
         }
+         */
         $typeInfo = Db("type")->where(['id' => $type, "level" => 2])->find();
         if (!$typeInfo) {
             u_log("用户" . $user['name'] . "(" . $user['id'] . ")发布视频失败('类型选择错误')", "error");
