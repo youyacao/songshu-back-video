@@ -180,8 +180,8 @@ class User extends Controller
                 $phone = input("phone/i");//手机号
                 $user = Db("user")->where(['phone' => $phone])->find();
                 $code = input("code/i");
-                if (!$user) {
 
+                if (!$user) {
                     $have_invite_code = input('have_invite_code/i');
                     $parent = NULL;
                     if ($have_invite_code == 0) {
@@ -196,6 +196,15 @@ class User extends Controller
                         }
 
                     }
+                }
+
+                //判断短信验证码是否正确
+                if (!Sms::verifySms($phone, $code)) {
+                    u_log("手机用户" . $phone . "登录失败", 'error');
+                    return error("验证码错误");
+                }
+
+                if (!$user) {
 
                     //用户不存在，自动注册
                     $user = [
@@ -228,11 +237,6 @@ class User extends Controller
                         //处于封禁状态，但是已过封禁时间，更新状态
                         Db("user")->where(['id' => $user['id']])->update(['disable' => 0, 'disable_time' => null]);
                     }
-                }
-                //判断短信验证码是否正确
-                if (!Sms::verifySms($phone, $code)) {
-                    u_log("手机用户" . $phone . "登录失败", 'error');
-                    return error("验证码错误");
                 }
 
                 $token = pass($phone . time() . getRandStr()) . $phone;
