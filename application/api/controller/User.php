@@ -662,14 +662,7 @@ class User extends Controller
         if ($user) {
             return error("该用户名已存在，请重新输入");
         }
-        $user = config('mail_user');
-        $pass = config('mail_pass');
-        $name = config("mail_name");
-        $smtp = config('mail_smtp');
-        $mail = new Mail($user,$pass,$name,$smtp);
-        if(!$mail->verifyCode($mailStr,$vcode)){
-            return error("验证码错误，请重新输入");
-        }
+
         //上级绑定
         $parent = NULL;
         if (strlen($invitecode) > 0) {
@@ -678,6 +671,16 @@ class User extends Controller
                 return error('邀请码不正确');
             }
         }
+
+        $user = config('mail_user');
+        $pass = config('mail_pass');
+        $name = config("mail_name");
+        $smtp = config('mail_smtp');
+        $mail = new Mail($user,$pass,$name,$smtp);
+        if(!$mail->verifyCode($mailStr,$vcode)){
+            return error("验证码错误，请重新输入");
+        }
+
 
         $user = [
             "username" => $username,
