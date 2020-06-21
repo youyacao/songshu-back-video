@@ -9,6 +9,32 @@ use think\Controller;
 class Skr extends Controller
 {
     /**
+     * 获取点赞列表
+     */
+    public function getList(){
+        $user = session("user") ;
+
+        if (!$user) {
+            return error("未登录");
+        }
+        $type = input("type/i",0);
+        $uid = $user['id'];
+        $where = array();
+        $where['s.uid'] = $uid;
+        $where['s.skr'] = 1;
+        $where['s.type'] = $type;
+        $list = Db("skr s")
+                ->join("video v", "v.id=s.vid and s.type=0", "left")
+                ->where($where)
+                ->field([
+                    "v.*"
+                ])
+                ->order(['s.id' => 'desc'])
+                ->select();
+        return success("成功", $list);
+    }
+
+    /**
      * Notes:点赞/取消点赞操作
      * User: BigNiu
      * Date: 2019/10/8
