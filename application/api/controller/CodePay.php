@@ -15,7 +15,7 @@ use think\response\Json;
 class CodePay extends Controller
 {
 
-    public function getIndex(){
+    public function index(){
         $sid = request()->param('sid');
         $payType = request()->param('payType');
         $shop_info = Db('vip_shop')->where('id', $sid)->find();
@@ -76,7 +76,7 @@ class CodePay extends Controller
         return success("下单成功",['codeUrl' => $codeUrl]);
     }
 
-    public function getIntegral(){
+    public function integral(){
         $gold = request()->param('gold');
         $payType = request()->param('payType');
         if (empty($gold)){
@@ -136,7 +136,7 @@ class CodePay extends Controller
         return success("下单成功",['codeUrl' => $codeUrl]);
     }
 
-    public function postNotify() {
+    public function notify() {
         $payConfig = getPayConfig();
         Log::record(json_encode($_POST));
         ksort($_POST); //排序post参数
@@ -209,7 +209,7 @@ class CodePay extends Controller
         }
     }
 
-    public function postNotifyIntegral() {
+    public function notifyIntegral() {
         $payConfig = getPayConfig();
         Log::record(json_encode($_POST));
         ksort($_POST); //排序post参数

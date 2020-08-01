@@ -18,7 +18,10 @@ Route::controller('subject','api/subject');
 Route::controller('type','api/type');
 
 Route::controller('pay','api/pay');
-Route::controller('codepay','api/codePay');
+Route::any('codepay/index','api/codePay/index');
+Route::any('codepay/integral','api/codePay/integral');
+Route::any('codepay/notify','api/codePay/notify');
+Route::any('codepay/notifyIntegral','api/codePay/notifyIntegral');
 
 Route::controller('user','api/user');
 
