@@ -18,7 +18,7 @@ Route::controller('subject','api/subject');
 Route::controller('type','api/type');
 
 Route::controller('pay','api/pay');
-Route::any('codepay','api/codePay');
+Route::controller('codepay','api/codePay');
 
 Route::controller('user','api/user');
 
