@@ -78,4 +78,9 @@ class Type extends Controller
         return success('',$list);
     }
 
+    public function getPaytypeList(){
+        $list = Db('pay_type')->select();
+        return success('',$list);
+    }
+
 }
