@@ -138,27 +138,26 @@ class CodePay extends Controller
 
     public function notify() {
         $payConfig = getPayConfig();
-        $params = request()->param();
-        Log::record(json_encode($params));
-        ksort($params); //排序post参数
-        reset($params); //内部指针指向数组中的第一个元素
+        Log::record(json_encode($_POST));
+        ksort($_POST); //排序post参数
+        reset($_POST); //内部指针指向数组中的第一个元素
         $codepay_key = $payConfig['pay_key'];
         $sign = '';//初始化
-        foreach ($params AS $key => $val) { //遍历POST参数
+        foreach ($_POST AS $key => $val) { //遍历POST参数
             if ($val == '' || $key == 'sign') continue; //跳过这些不签名
             if ($sign) $sign .= '&'; //第一个字符串签名不加& 其他加&连接起来参数
             $sign .= "$key=$val"; //拼接为url参数形式
         }
-        if (!$params['pay_no'] || md5($sign . $codepay_key) != $params['sign']) { //不合法的数据
+        if (!$_POST['pay_no'] || md5($sign . $codepay_key) != $_POST['sign']) { //不合法的数据
             exit('支付失败');  //返回失败 继续补单
         } else { //合法的数据
             //业务处理
-            $order_id = $params['pay_id']; //需要充值的ID 或订单号 或用户名
-            $money = (float)$params['money']; //实际付款金额
-            $price = (float)$params['price']; //订单的原价
-            $param = $params['param']; //自定义参数
-            $pay_no = $params['pay_no']; //流水号
-            $payTime= date('Y-m-d H:i:s', $params['payTime']);
+            $order_id = $_POST['pay_id']; //需要充值的ID 或订单号 或用户名
+            $money = (float)$_POST['money']; //实际付款金额
+            $price = (float)$_POST['price']; //订单的原价
+            $param = $_POST['param']; //自定义参数
+            $pay_no = $_POST['pay_no']; //流水号
+            $payTime= date('Y-m-d H:i:s', $_POST['payTime']);
             $order_info = Db('vip_log')->where('id', $order_id)->find();
             if ($order_info['status'] == '1') {
                 exit(json_encode([
@@ -212,27 +211,26 @@ class CodePay extends Controller
 
     public function notifyIntegral() {
         $payConfig = getPayConfig();
-        $params = request()->param();
-        Log::record(json_encode($params));
-        ksort($params); //排序post参数
-        reset($params); //内部指针指向数组中的第一个元素
+        Log::record(json_encode($_POST));
+        ksort($_POST); //排序post参数
+        reset($_POST); //内部指针指向数组中的第一个元素
         $codepay_key = $payConfig['pay_key'];
         $sign = '';//初始化
-        foreach ($params AS $key => $val) { //遍历POST参数
+        foreach ($_POST AS $key => $val) { //遍历POST参数
             if ($val == '' || $key == 'sign') continue; //跳过这些不签名
             if ($sign) $sign .= '&'; //第一个字符串签名不加& 其他加&连接起来参数
             $sign .= "$key=$val"; //拼接为url参数形式
         }
-        if (!$params['pay_no'] || md5($sign . $codepay_key) != $params['sign']) { //不合法的数据
+        if (!$_POST['pay_no'] || md5($sign . $codepay_key) != $_POST['sign']) { //不合法的数据
             exit('支付失败');  //返回失败 继续补单
         } else { //合法的数据
             //业务处理
-            $order_id = $params['pay_id'] ? ''; //需要充值的ID 或订单号 或用户名
-            $money = (float)$params['money']; //实际付款金额
-            $price = (float)$params['price']; //订单的原价
-            $param = $params['param']; //自定义参数
-            $pay_no = $params['pay_no']; //流水号
-            $payTime= date('Y-m-d H:i:s', $params['payTime']);
+            $order_id = $_POST['pay_id']; //需要充值的ID 或订单号 或用户名
+            $money = (float)$_POST['money']; //实际付款金额
+            $price = (float)$_POST['price']; //订单的原价
+            $param = $_POST['param']; //自定义参数
+            $pay_no = $_POST['pay_no']; //流水号
+            $payTime= date('Y-m-d H:i:s', $_POST['payTime']);
             $order_info = Db('recharge_log')->where('id', $order_id)->find();
             if ($order_info['status'] == '1') {
                 exit(json_encode([
