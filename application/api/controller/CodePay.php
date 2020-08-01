@@ -273,7 +273,7 @@ class CodePay extends Controller
             //添加账变记灵
             $data = array();
             $data['user_id'] = $order_info['uid'];
-            $data['num'] = $money * -1;
+            $data['num'] = $money * 1;
             $data['before_money'] = $user['money'];
             $data['after_money'] = $allMoney;
             $data['info'] = '充值金币';
