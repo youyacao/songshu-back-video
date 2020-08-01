@@ -165,7 +165,7 @@ class CodePay extends Controller
                     'message'   => '已经充值完成'
                 ]));
             }
-            if($pay_no){
+            if(empty($pay_no)){
                 Db('vip_log')->where('id', $order_id)->update([
                     'status'    => 0,
                     'payTime'   => $payTime,
@@ -238,7 +238,7 @@ class CodePay extends Controller
                     'message'   => '已经充值完成'
                 ]));
             }
-            if($pay_no){
+            if(empty($pay_no)){
                 Db('recharge_log')->where('id', $order_id)->update([
                     'status'    => 0,
                     'payTime'   => $payTime,
