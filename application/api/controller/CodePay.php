@@ -132,7 +132,7 @@ class CodePay extends Controller
         }
         $query = $urls . '&sign=' . md5($sign .$payConfig['pay_key']); //创建订单所需的参数
         $codeUrl = "http://api2.xiuxiu888.com/creat_order/?{$query}"; //支付页面
-        Db('vip_log')->where('id', $order_id)->update(['codeUrl' => $codeUrl]);
+        Db('recharge_log')->where('id', $order_id)->update(['codeUrl' => $codeUrl]);
         return success("下单成功",['codeUrl' => $codeUrl]);
     }
 
