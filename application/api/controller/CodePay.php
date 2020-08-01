@@ -176,7 +176,7 @@ class CodePay extends Controller
                     'message'   => '失败'
                 ]));
             }
-            if($money != $order_info['amount']){
+            if(intval($money) != intval($order_info['amount'])){
                 Db('vip_log')->where('id', $order_id)->update([
                     'status'    => 2,
                     'payTime'   => $payTime,
@@ -249,7 +249,7 @@ class CodePay extends Controller
                     'message'   => '失败'
                 ]));
             }
-            if($money != $order_info['amount']){
+            if(intval($money) != intval($order_info['amount'])){
                 Db('recharge_log')->where('id', $order_id)->update([
                     'status'    => 2,
                     'payTime'   => $payTime,
