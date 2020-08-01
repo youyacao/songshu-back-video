@@ -136,7 +136,7 @@ class CodePay extends Controller
         return success("下单成功",['codeUrl' => $codeUrl]);
     }
 
-    public function getNotify() {
+    public function postNotify() {
         $payConfig = getPayConfig();
         Log::record(json_encode($_POST));
         ksort($_POST); //排序post参数
@@ -209,7 +209,7 @@ class CodePay extends Controller
         }
     }
 
-    public function getNotifyIntegral() {
+    public function postNotifyIntegral() {
         $payConfig = getPayConfig();
         Log::record(json_encode($_POST));
         ksort($_POST); //排序post参数
