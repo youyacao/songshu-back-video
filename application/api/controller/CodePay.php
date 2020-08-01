@@ -17,7 +17,7 @@ class CodePay extends Controller
  
     public function index(){
         $sid = request()->param('sid');
-        $payType = request()->param('payType') ? request()->param('payType'):1;
+        $payType = request()->param('payType');
         $shop_info = Db('vip_shop')->where('id', $sid)->find();
         if (empty($shop_info)){
             return error("参数不对，请重试！");
@@ -27,7 +27,11 @@ class CodePay extends Controller
             return error("请先登录！");
         }
         $payConfig = getPayConfig();
-
+        if ($payType == 'alipay') {
+            $payType = 1;
+        } else {
+            $payType = 3;
+        }
         $params = [];
         $params['uid']  = $user['id'];
         $params['shop_id']  = $sid;
