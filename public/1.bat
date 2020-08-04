@@ -1,1 +1,0 @@
-php ../think video
