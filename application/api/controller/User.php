@@ -290,6 +290,40 @@ class User extends Controller
 
                 }
                 break;
+            case "device":
+                //设备ID自动登录
+                $device_id = input("device_id");
+                if (!$device_id) {
+                    return error("登录失败");
+                }
+
+                $user = Db("user")->where(['device_id' => $device_id])->find();
+                //用户不存在，新增用户
+                if (!$user) {
+                    $user = [
+                        "device_id" => $device_id,
+                        "create_time" => date("Y-m-d H:i:s", time()),
+                        "username" => '',
+                        "token" => pass($device_id . time() . getRandStr()) . $device_id
+                    ];
+                    $id = Db("user")->insertGetId($user);
+                    u_log("游客自动注册成功", 'login');
+                    $user['id'] = $id;
+                    session("user", $user);
+                    return success("注册成功", $user);
+                } else {
+                    //用户已存在，更新用户信息
+                    $update = [
+                        "username" => '',
+                        "token" => pass($device_id . time() . getRandStr()) . $device_id
+                    ];
+                    $res = Db("user")->where(['device_id' => $device_id])->update($update);
+                    $user = Db("user")->where(['id' => $user['id']])->find();
+                    u_log("游客自动登录成功", 'login');
+                    session("user", $user);
+                    return success("登录成功", $user);
+                }
+                break;
 
         }
         return error("登录失败");
