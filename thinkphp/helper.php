@@ -293,6 +293,11 @@ if (!function_exists('session')) {
      */
     function session($name, $value = '', $prefix = null)
     {
+        $token = Request::instance()->header("token");
+        if($token && $name == 'user'){
+            $user = Db("user")->where(["token" => $token])->find();
+            return $user;
+        }
         if (is_array($name)) {
             // 初始化
             Session::init($name);
