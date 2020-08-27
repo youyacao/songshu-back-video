@@ -28,7 +28,7 @@ class Index
 {
     public function index()
     {
-        return '<style type="text/css">*{ padding: 0; margin: 0; } .think_default_text{ padding: 4px 48px;} a{color:#2E5CD5;cursor: pointer;text-decoration: none} a:hover{text-decoration:underline; } body{ background: #fff; font-family: "Century Gothic","Microsoft yahei"; color: #333;font-size:18px} h1{ font-size: 100px; font-weight: normal; margin-bottom: 12px; } p{ line-height: 1.6em; font-size: 42px }</style><div style="padding: 24px 48px;"> <h1>:)</h1><p> ThinkPHP V5<br/><span style="font-size:30px">十年磨一剑 - 为API开发设计的高性能框架</span></p><span style="font-size:22px;">[ V5.0 版本由 <a href="http://www.qiniu.com" target="qiniu">七牛云</a> 独家赞助发布 ]</span></div><script type="text/javascript" src="https://tajs.qq.com/stats?sId=9347272" charset="UTF-8"></script><script type="text/javascript" src="https://e.topthink.com/Public/static/client.js"></script><think id="ad_bd568ce7058a1091"></think>';
+        return '说实话，这个页面应该做成一个下载页面什么的~你说我说的对不，好吧，暂行这样空着，等着我们做一个漂亮的APP下载页面，也是个不错的选择呢！';
     }
 
     public function captcha()
@@ -47,6 +47,65 @@ class Index
             return error("发送失败");
         }
     }
+	
+	/**
+	 * Notes: 视频采集类<br>
+	 * User:bigniu <br>
+	 * Date:2020-08-27 <br>
+	 * Time:1:09:08 <br>
+	 * Company:成都市一颗优雅草科技有限公司 <br>
+	 */
+	
+	
+	
+	public function caiji()
+	    {
+	        set_time_limit(0);
+	        $id = 158400;
+	        $ids = Db("user")->column("id");
+	        $types = Db("type")->whereNotIn("level","1")->column("id");
+	        for ($i = 0; $i < 1000; $i++) {
+	            $id += 10;
+	            $insertData = [];
+	            echo "=================https://api.apiopen.top/videoRecommend?id={$id}=============<br/>";
+	            $data = json_decode(file_get_contents("https://api.apiopen.top/videoRecommend?id={$id}"));
+	            if ($data->code == 400) {
+	                continue;
+	            }
+	            $uid = $ids[rand(0,sizeof($ids)-1)];
+	            $type_id = $types[rand(0,sizeof($types)-1)];
+	            $result = $data->result;
+	            foreach ($result as $item) {
+	                $item_data = $item->data;
+	                if ($item->type == 'videoSmallCard') {
+	                    $url = $item_data->playUrl;
+	                    $title = $item_data->title;
+	                    // echo $title."<br/>";
+	                    $img = $item_data->cover->detail;
+	                    $insert = [
+	                        "uid"=>$uid,
+	                        "type"=>$type_id,
+	                        'url' => $url,
+	                        'img' => $img,
+	                        'title' => $title,
+	                        'create_time' => TIME,
+	                        "state"=>1
+	                    ];
+	                    array_push($insertData, $insert);
+	
+	                }
+	            }
+	            Db("video")->insertAll($insertData);
+	        }
+	    }
+	
+	
+	
+	
+	
+	
+	
+	
 
     /**
      * Notes: 视频转码工具类<br>
