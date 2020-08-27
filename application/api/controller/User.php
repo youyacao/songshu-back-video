@@ -303,7 +303,8 @@ class User extends Controller
                     $user = [
                         "device_id" => $device_id,
                         "create_time" => date("Y-m-d H:i:s", time()),
-                        "username" => '',
+                        "head_img" => 'static/image/head.png',
+                        "username" => getRandStr(8),
                         "token" => pass($device_id . time() . getRandStr()) . $device_id
                     ];
                     $id = Db("user")->insertGetId($user);
@@ -314,9 +315,10 @@ class User extends Controller
                 } else {
                     //用户已存在，更新用户信息
                     $update = [
-                        "username" => '',
                         "token" => pass($device_id . time() . getRandStr()) . $device_id
                     ];
+                    if(!$user['head_img']) $update['head_img'] = 'static/image/head.png';
+                    if(!$user['username']) $update['username'] = getRandStr(8);
                     $res = Db("user")->where(['device_id' => $device_id])->update($update);
                     $user = Db("user")->where(['id' => $user['id']])->find();
                     u_log("游客自动登录成功", 'login');
