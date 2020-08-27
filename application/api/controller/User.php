@@ -300,11 +300,13 @@ class User extends Controller
                 $user = Db("user")->where(['device_id' => $device_id])->find();
                 //用户不存在，新增用户
                 if (!$user) {
+                    $username = getRandStr(8);
                     $user = [
                         "device_id" => $device_id,
                         "create_time" => date("Y-m-d H:i:s", time()),
                         "head_img" => 'static/image/head.png',
-                        "username" => getRandStr(8),
+                        "username" => $username,
+                        "name" => $username,
                         "token" => pass($device_id . time() . getRandStr()) . $device_id
                     ];
                     $id = Db("user")->insertGetId($user);
@@ -319,6 +321,7 @@ class User extends Controller
                     ];
                     if(!$user['head_img']) $update['head_img'] = 'static/image/head.png';
                     if(!$user['username']) $update['username'] = getRandStr(8);
+                    if(!$user['name']) $update['name'] = isset($update['username']) ? $update['username'] : getRandStr(8);
                     $res = Db("user")->where(['device_id' => $device_id])->update($update);
                     $user = Db("user")->where(['id' => $user['id']])->find();
                     u_log("游客自动登录成功", 'login');
