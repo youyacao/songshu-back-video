@@ -24,7 +24,7 @@ class Live extends Controller
     }
 
     // 直播列表
-    public function getLists()
+    public function getList()
     {
         $page = (int)input('page', 1);
         $limit = (int)input('limit', 10);
