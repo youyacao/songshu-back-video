@@ -11,6 +11,8 @@
 // 给User控制器设置快捷路由
 use think\Route;
 
+Route::any('config','api/config/index');
+
 Route::controller('video','api/video');
 
 Route::controller('live','api/live');
