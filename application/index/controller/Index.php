@@ -28,7 +28,24 @@ class Index
 {
     public function index()
     {
-        return '说实话，这个页面应该做成一个下载页面什么的~你说我说的对不，好吧，暂行这样空着，等着我们做一个漂亮的APP下载页面，也是个不错的选择呢！';
+        return '（2021年1月1日）各位大哥，一直没有时间来做这一块，哎，不仅要干工作，还要做公司的事情，我们也是很难啊，个个身兼多职，不要太苛刻拉，说实话，这个页面应该做成一个下载页面什么的~你说我说的对不，好吧，暂行这样空着，等着我们做一个漂亮的APP下载页面，也是个不错的选择呢！</br>好啦，我们这里放几个地址，<p>
+    <a href="https://songshu.youyacao.com/video.html" target="_blank">YYC松鼠短视频系统</a>
+</p>
+<p>
+    <a href="https://songshu.youyacao.com/qingting.html" target="_blank">YYC蜻蜓S系统</a>
+</p>
+<p>
+  <a href="https://songshu.youyacao.com/film.html" target="_self">YYC蜻蜓F影视系统</a>
+</p>
+<p>
+    <a href="https://www.youyacao.com" target="_blank">优雅草官方网站</a>
+</p>
+<p>
+    <a href="https://bbs.youyacao.com" target="_blank">优雅草技术论坛</a>
+</p>
+<p>
+    <br/>
+</p>';
     }
 
     public function captcha()
@@ -58,51 +75,67 @@ class Index
 	
 	
 	
-	public function caiji()
-	    {
-	        set_time_limit(0);
-	        $id = 158400;
-	        $ids = Db("user")->column("id");
-	        $types = Db("type")->whereNotIn("level","1")->column("id");
-	        for ($i = 0; $i < 1000; $i++) {
-	            $id += 10;
-	            $insertData = [];
-	            echo "=================https://api.apiopen.top/videoRecommend?id={$id}=============<br/>";
-	            $data = json_decode(file_get_contents("https://api.apiopen.top/videoRecommend?id={$id}"));
-	            if ($data->code == 400) {
-	                continue;
-	            }
-	            $uid = $ids[rand(0,sizeof($ids)-1)];
-	            $type_id = $types[rand(0,sizeof($types)-1)];
-	            $result = $data->result;
-	            foreach ($result as $item) {
-	                $item_data = $item->data;
-	                if ($item->type == 'videoSmallCard') {
-	                    $url = $item_data->playUrl;
-	                    $title = $item_data->title;
-	                    // echo $title."<br/>";
-	                    $img = $item_data->cover->detail;
-	                    $insert = [
-	                        "uid"=>$uid,
-	                        "type"=>$type_id,
-	                        'url' => $url,
-	                        'img' => $img,
-	                        'title' => $title,
-	                        'create_time' => TIME,
-	                        "state"=>1
-	                    ];
-	                    array_push($insertData, $insert);
-	
-	                }
-	            }
-	            Db("video")->insertAll($insertData);
-	        }
-	    }
-	
-	
-	
-	
-	
+private function curl_get($url){
+
+        $ch = curl_init();
+
+        curl_setopt ( $ch, CURLOPT_URL, $url );
+        curl_setopt ( $ch, CURLOPT_RETURNTRANSFER, 1 );
+        curl_setopt ( $ch, CURLOPT_CUSTOMREQUEST, 'GET' );
+
+        curl_setopt ( $ch, CURLOPT_TIMEOUT, 60 );
+        $https = strpos(strtolower($url),"https://") !== false;
+        if ($https) {
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE); // 对认证证书来源的检查
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE); // 从证书中检查SSL加密算法是否存在
+        }
+
+        $result = curl_exec($ch);
+        return $result;
+    }
+    public function caiji()
+    {
+        set_time_limit(0);
+        $id = 158400;
+        $ids = Db("user")->column("id");
+        $types = Db("type")->whereNotIn("level","1")->column("id");
+        for ($i = 0; $i < 1000; $i++) {
+            $id += 10;
+            $insertData = [];
+            echo "=================https://api.apiopen.top/videoRecommend?id={$id}=============<br/>";
+            $data = json_decode($this->curl_get("https://api.apiopen.top/videoRecommend?id={$id}"),true);
+            //var_dump($data);
+
+            if ($data['code'] == 400) {
+                continue;
+            }
+            $uid = $ids[rand(0,sizeof($ids)-1)];
+            $type_id = $types[rand(0,sizeof($types)-1)];
+            $result = $data['result'];
+            foreach ($result as $item) {
+                $item_data = $item['data'];
+                if ($item['type'] == 'videoSmallCard') {
+                    $url = $item_data['playUrl'];
+                    $title = $item_data['title'];
+                    // echo $title."<br/>";
+                    $img = $item_data['cover']['detail'];
+                    $insert = [
+                        "uid"=>$uid,
+                        "type"=>$type_id,
+                        'url' => $url,
+                        'img' => $img,
+                        'title' => $title,
+                        'create_time' => TIME,
+                        "state"=>1
+                    ];
+                    array_push($insertData, $insert);
+
+                }
+            }
+            Db("video")->insertAll($insertData);
+        }
+    }
+
 	
 	
 	

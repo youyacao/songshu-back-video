@@ -213,7 +213,7 @@ class User extends Controller
                         'invit_code' => $this->getInvite(),
                         'reg_code' => $parent ? $parent['invit_code'] : NULL,
                         "create_time" => date("Y-m-d H:i:s", time()),
-                        "head_img" => 'static/image/head.png',
+                        "head_img" => 'static/image/logo.png',
                         "name" => substr($phone, 0, 3) . "****" . substr($phone, -4, strlen($phone)),
                         "token" => pass($phone . time() . getRandStr()) . $phone
                     ];
@@ -304,7 +304,7 @@ class User extends Controller
                     $user = [
                         "device_id" => $device_id,
                         "create_time" => date("Y-m-d H:i:s", time()),
-                        "head_img" => 'static/image/head.png',
+                        "head_img" => 'static/image/logo.png',
                         "username" => $username,
                         "name" => $username,
                         "token" => pass($device_id . time() . getRandStr()) . $device_id
@@ -319,7 +319,7 @@ class User extends Controller
                     $update = [
                         "token" => pass($device_id . time() . getRandStr()) . $device_id
                     ];
-                    if(!$user['head_img']) $update['head_img'] = 'static/image/head.png';
+                    if(!$user['head_img']) $update['head_img'] = 'static/image/logo.png';
                     if(!$user['username']) $update['username'] = getRandStr(8);
                     if(!$user['name']) $update['name'] = isset($update['username']) ? $update['username'] : getRandStr(8);
                     $res = Db("user")->where(['device_id' => $device_id])->update($update);
@@ -430,7 +430,7 @@ class User extends Controller
                 'mail',
                 'qq',
                 'create_time',
-                "ifnull(head_img,'static/image/head.png') head_img",
+                "ifnull(head_img,'static/image/logo.png') head_img",
                 "custom_id",
                 "token",
                 'disable',
@@ -493,7 +493,7 @@ class User extends Controller
                 'id',
                 'ifnull(name,phone) name',
                 'create_time',
-                "ifnull(head_img,'static/image/head.png') head_img",
+                "ifnull(head_img,'static/image/logo.png') head_img",
                 "custom_id"
             ])
             ->find();
@@ -645,7 +645,7 @@ class User extends Controller
             ->field([
                 'u.id',//用户id
                 'u.name',//用户名
-                "ifnull(u.head_img,'static/image/head.png') head_img",//头像
+                "ifnull(u.head_img,'static/image/logo.png') head_img",//头像
                 "count(f.id) follow_count",//关注数
                 "ifnull(f1.create_time,'0') follow",//当前用户是否关注
             ])
@@ -729,7 +729,7 @@ class User extends Controller
             'invit_code' => $this->getInvite(),
             'reg_code' => $parent ? $parent['invit_code'] : NULL,
             "create_time" => date("Y-m-d H:i:s", time()),
-            "head_img" => 'static/image/head.png',
+            "head_img" => 'static/image/logo.png',
             "name" => $username,
             "token" => pass($username . time() . getRandStr()) . $username
         ];
