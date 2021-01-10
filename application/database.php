@@ -13,7 +13,7 @@ return [
     // 数据库类型
     'type'            => 'mysql',
     // 服务器地址
-    'hostname'        => 'mysql',
+    'hostname'        => 'localhost',
     // 数据库名
     'database'        => 'videofree',
     // 用户名
