@@ -103,6 +103,7 @@ class Searcher
             ->group("v.id")
             ->field([
                 "v.id",//视频ID
+                "v.type",//视频分类
                 "v.title",//视频标题
                 "v.url",//视频链接
                 "v.img",//视频图片
