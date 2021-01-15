@@ -96,7 +96,7 @@ class Searcher
             $model->where($map);
         }
         if ($text) {
-            $model->whereLike("v.title", '%'.$text.'%', "and")
+            $model->whereLike("v.title", '%'.$text.'%', "and");
         }
         $list = $model->join("skr s", "v.id=s.vid and " . $user['id'] . "=s.uid", "left")
             ->join("skr s1", "v.id=s1.vid", "left")
