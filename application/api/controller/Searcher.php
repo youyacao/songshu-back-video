@@ -78,7 +78,6 @@ class Searcher
         }
         $text = input("key");
         $type = input("type");
-        $page = input("page", 1);
         $pageSize = input("pageSize", 10);
         $seacher = [
             'key'=>$text,
@@ -88,22 +87,13 @@ class Searcher
         ];
         $map = [];
         if ($type) {
-            $map['type'] = $type;
+            $map['v.type'] = $type;
         }
         Db("seach_history")->insert($seacher);
-        $vids = Db("video")
-            ->where($map)
-            ->whereLike("title", '%'.$text.'%', "and")
-            ->field(['id'])
-            ->page($page, $pageSize)
-            ->select();
-        $ids = [];
-        foreach ($vids as $key => $vid) {
-            $ids[] = $vid['id'];
-        }
 
         $list = Db("video v")
-            ->whereIn("v.id", $ids)
+            ->where($map)
+            ->whereLike("v.title", '%'.$text.'%', "and")
             ->join("skr s", "v.id=s.vid and " . $user['id'] . "=s.uid", "left")
             ->join("skr s1", "v.id=s1.vid", "left")
             ->join("user u", "v.uid=u.id", "left")
@@ -126,6 +116,7 @@ class Searcher
                 "count(distinct c.id) comment_count",//评论数
                 "count(distinct h.id) view_count",//播放次数
             ])
+            ->page($page, $pageSize)
             ->select();
         foreach ($list as &$value) {
             $is_buy = 0;
