@@ -78,6 +78,8 @@ class Searcher
         }
         $text = input("key");
         $type = input("type");
+        $page = input("page", 1);
+        $pageSize = input("pageSize", 10);
         $seacher = [
             'key'=>$text,
             'uid'=>$user['id'],
@@ -93,6 +95,7 @@ class Searcher
             ->where($map)
             ->whereLike("title", '%'.$text.'%', "and")
             ->field(['id'])
+            ->page($page, $pageSize)
             ->select();
         $ids = [];
         foreach ($vids as $key => $vid) {
