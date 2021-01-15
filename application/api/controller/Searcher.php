@@ -91,10 +91,14 @@ class Searcher
         }
         Db("seach_history")->insert($seacher);
 
-        $list = Db("video v")
-            ->where($map)
-            ->whereLike("v.title", '%'.$text.'%', "and")
-            ->join("skr s", "v.id=s.vid and " . $user['id'] . "=s.uid", "left")
+        $model = Db("video v");
+        if ($type) {
+            $model->where($map);
+        }
+        if ($text) {
+            $model->whereLike("v.title", '%'.$text.'%', "and")
+        }
+        $list = $model->join("skr s", "v.id=s.vid and " . $user['id'] . "=s.uid", "left")
             ->join("skr s1", "v.id=s1.vid", "left")
             ->join("user u", "v.uid=u.id", "left")
             ->join("view_history h", "v.id=h.vid", "left")
