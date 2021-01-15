@@ -94,7 +94,6 @@ class Searcher
         $model = Db("video v");
         if ($type) {
             $type_ids = Db('type')->where('pid', $type)->column('id');
-            var_dump($type_ids);die;
             $model->whereIn('v.type', $type_ids);
         }
         if ($text) {
