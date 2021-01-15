@@ -93,7 +93,8 @@ class Searcher
 
         $model = Db("video v");
         if ($type) {
-            $model->where($map);
+            $type_ids = Db('type')->where('pid', $type)->column('id');
+            $model->whereIn('v.type', $type_ids);
         }
         if ($text) {
             $model->whereLike("v.title", '%'.$text.'%', "and");
