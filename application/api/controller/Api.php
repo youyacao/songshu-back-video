@@ -344,6 +344,7 @@ class Api extends Controller
             'video_free_time',//免费观看时间
             'advert_count',//广告刷到的频率
             'share_url',//分享地址
+            'video_free_num', // 免费观看视频条数
         ];
 
         $config = Db("config")->whereIn("name", $publicConfig)->field("name,value")->select();
