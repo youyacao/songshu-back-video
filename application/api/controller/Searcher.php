@@ -110,7 +110,6 @@ class Searcher
             ->join("view_history h", "v.id=h.vid", "left")
             ->join("comment c", "v.id=c.vid and c.pid=0", "left")
             ->order("skr desc,create_time")
-            ->page($page, 20)
             ->group("v.id")
             ->field([
                 "v.id",//视频ID
