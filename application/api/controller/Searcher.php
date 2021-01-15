@@ -73,6 +73,9 @@ class Searcher
     {
         $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
         $user = session("user") ;
+        if (!$user) {
+            return error("未登录");
+        }
         $text = input("key");
         $type = input("type");
         $pageSize = input("pageSize", 10);
