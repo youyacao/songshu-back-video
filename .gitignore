@@ -5,3 +5,4 @@ runtime
 public/video/
 .user.ini
 .htaccess
+application/database.php

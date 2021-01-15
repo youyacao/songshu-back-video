@@ -77,16 +77,25 @@ class Searcher
             return error("未登录");
         }
         $text = input("key");
+        $type = input("type");
+        $page = input("page", 1);
+        $pageSize = input("pageSize", 10);
         $seacher = [
             'key'=>$text,
             'uid'=>$user['id'],
             'create_time'=>TIME,
             'type'=>"video"
         ];
+        $map = [];
+        if ($type) {
+            $map['type'] = $type;
+        }
         Db("seach_history")->insert($seacher);
         $vids = Db("video")
+            ->where($map)
             ->whereLike("title", '%'.$text.'%', "and")
             ->field(['id'])
+            ->page($page, $pageSize)
             ->select();
         $ids = [];
         foreach ($vids as $key => $vid) {
@@ -101,7 +110,6 @@ class Searcher
             ->join("view_history h", "v.id=h.vid", "left")
             ->join("comment c", "v.id=c.vid and c.pid=0", "left")
             ->order("skr desc,create_time")
-            ->page($page, 20)
             ->group("v.id")
             ->field([
                 "v.id",//视频ID
