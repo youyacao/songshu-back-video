@@ -77,14 +77,20 @@ class Searcher
             return error("未登录");
         }
         $text = input("key");
+        $type = input("type");
         $seacher = [
             'key'=>$text,
             'uid'=>$user['id'],
             'create_time'=>TIME,
             'type'=>"video"
         ];
+        $map = [];
+        if ($type) {
+            $map['type'] = $type;
+        }
         Db("seach_history")->insert($seacher);
         $vids = Db("video")
+            ->where($map)
             ->whereLike("title", '%'.$text.'%', "and")
             ->field(['id'])
             ->select();
