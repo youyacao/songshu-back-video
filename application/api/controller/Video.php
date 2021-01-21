@@ -84,10 +84,8 @@ class Video
         $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
         if ($newVideo) {
             //查询20条视频数据的ID
-            $videos = Db("video")->page($page, 20)->where(['state' => 1])->field("id")->order("create_time desc")->select();
-            $videoids = array_column($videos, "id");
             $list = Db("video v")
-                ->whereIn('v.id', $videoids)//只查询包含的ID
+                ->where('v.state', 1)//只查询包含的ID
                 ->join("skr s", " v.id=s.vid and s.type=0 and '" . $user['id'] . "'=s.uid", "left")//视频ID等于点赞视频ID并且当前用户ID登录点赞用户ID
                 ->join("skr s1", "v.id=s1.vid and s1.type=0", "left")//视频ID等于点赞视频ID
                 ->join("user u", "v.uid=u.id", "left")//视频用户ID等于用户ID
@@ -115,6 +113,7 @@ class Video
                     "count(distinct h.id) view_count",//播放次数
                 ])
                 ->order(['create_time' => 'desc'])//根据点赞数排序如同级根据发布时间排序，最新的在最上面
+                ->page($page, 20)
                 ->select();
             return $list;
         } else {
@@ -123,12 +122,9 @@ class Video
             //通过ID获取已看视频ID
             $vids = Db("view_history")->where(["uid" => $user['id']])->field("vid")->select();
             $ids = array_column($vids, "vid");;
-            //通过已看视频ID获取未看视频并通过发布时间倒序排序
-            //查询20条视频数据的ID
-            $videos = Db("video")->page($page, 20)->where(['state' => 1])->whereNotIn('id', $ids)->field("id")->order("create_time desc")->select();
-            $videoids = array_column($videos, "id");
             $list = Db("video v")
-                ->whereIn("v.id", $videoids)
+                ->where('v.state', 1)
+                ->whereNotIn("v.id", $ids)
                 ->join("skr s", " v.id=s.vid and s.type=0 and '" . $user['id'] . "'=s.uid", "left")
                 ->join("skr s1", "v.id=s1.vid and s1.type=0", "left")
                 ->join("user u", "v.uid=u.id", "left")
@@ -156,6 +152,7 @@ class Video
                     "count(distinct c.id) comment_count",//评论数
                     "count(distinct h.id) view_count",//播放次数
                 ])
+                ->page($page, 20)
                 ->select();
 
             return $list;
