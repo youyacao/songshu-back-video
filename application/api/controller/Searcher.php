@@ -83,9 +83,11 @@ class Searcher
     public function postVideo()
     {
         $page = input("page/i", 1) <= 1 ? 1 : input("page/i", 1);
-        $user = session("user") ;
+        $user = session("user") ? session("user") : session("guest_user");
         if (!$user) {
-            return error("未登录");
+            //未登录，使用访客用户
+            session("guest_user", ['id' => adminpass(header("user-agent") . time())]);
+            $user = session("guest_user");
         }
         $text = input("key");
         $type = input("type");
