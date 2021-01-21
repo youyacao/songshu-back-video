@@ -132,7 +132,7 @@ class Video
                 ->join("collection co", "v.id=co.vid and co.uid = '" . $user['id'] . "'", "left")//视频ID等于收藏的视频ID并且收藏的用户ID为当前用户ID
                 ->join("view_history h", "v.id=h.vid", "left")
                 ->join("comment c", "v.id=c.vid and c.pid=0 and c.type=0", "left")
-                ->order("skr desc")
+                ->order("v.skr_count desc")
                 ->group("v.id")
                 ->field([
                     "v.id",//视频ID
