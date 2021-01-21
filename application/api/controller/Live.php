@@ -1,21 +1,14 @@
-<!-- 
-All rights Reserved, Designed By www.youyacao.com 
+<?php
+/**
+All rights Reserved, Designed By www.youyacao.com
 @Description:直播方法文件
-@author:成都市一颗优雅草科技有限公司     
+@author:成都市一颗优雅草科技有限公司
 @version 松鼠短视频系统-后端部分
 注意：后端代码在获得授权之前通过其他非官方渠道获得代码均为侵权，禁止用于商业用途，否则将承担因此带来等版权纠纷。
 需要商业用途或者定制开发等可访问songshu.youyacao.com   联系QQ:422108995 23625059584
 
- -->
-
-<?php
-/**
- * 直播
- * @date    2020-01-03
- * @author  kiro
- * @email   294843009@qq.com
- * @version 1.0
  */
+
 namespace app\api\controller;
 
 use app\api\common\LiveService;

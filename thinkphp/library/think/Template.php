@@ -584,7 +584,7 @@ class Template
                 // 替换literal标签
                 foreach ($matches as $match) {
                     $this->literal[] = substr($match[0], strlen($match[1]), -strlen($match[2]));
-                    $content         = str_replace($match[0], "<!--###literal{$count}###-->", $content);
+                    $content         = str_replace($match[0], "<!--###literal{$count}###*/", $content);
                     $count++;
                 }
             } else {
@@ -1116,7 +1116,7 @@ class Template
                     }
                     break;
                 case 'restoreliteral':
-                    $regex = '<!--###literal(\d+)###-->';
+                    $regex = '<!--###literal(\d+)###*/';
                     break;
                 case 'include':
                     $name = 'file';
