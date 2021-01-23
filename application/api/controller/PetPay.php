@@ -79,63 +79,7 @@ class PetPay extends Controller
 
     public function returnUrl()
     {
-        $pay = new PtSdk($this->pay_pet_user_id, $this->pay_pet_key);
-        //验证签名
-        if($pay->isSign())
-        {
-            //检查订单是否存在
-            if($pay->isCheckOrder()){
-                //检查订单是否支付
-                if ($pay->checkOrderState()){
-                    //签名验证成功,订单验证成功
-                    //---------开始业务逻辑----------------
-                    $param = request()->param();
-                    Log::record(json_encode($param));
-                    $order_id = (string)$param['payId'];
-                    $price = (float)$param['price'];
-                    $reallyPrice = (float)$param['reallyPrice'];
-                    if (round($price,2) != round($reallyPrice, 2)) {
-                        Db('recharge_log')->where('id', $order_id)->update([
-                            'status'    => 2,
-                            'payTime'   => date('Y-m-d H:i:s'),
-                            'remark'    => "支付金额不对,实际支付{$reallyPrice}"
-                        ]);
-                        exit(json_encode([
-                            'code'  => 'fail',
-                            'message'   => '支付金额不对'
-                        ]));
-                    }
-                    $order_info = Db('recharge_log')->where('id', $order_id)->find();
-                    if ($order_info['status'] == '1') {
-                        exit(json_encode([
-                            'code'  => 'success',
-                            'message'   => '已经充值完成'
-                        ]));
-                    }
-                    Db('recharge_log')->where('id', $order_id)->update([
-                        'status'    => 2,
-                        'payTime'   => date('Y-m-d H:i:s'),
-                        'remark'    => '支付失败'
-                    ]);
-                    exit(json_encode([
-                        'code'  => 'fail',
-                        'message'   => '失败'
-                    ]));
-                    //----------业务逻辑结束---------------
-                    //告诉服务器已经收到通知
-                    echo 'success';die;
-                }else{
-                    exit('fail');
-                }
-            }else{
-                exit('fail');
-            }
-
-        }
-        else
-        {
-            exit('fail');
-        }
+        exit("支付完成");
     }
 
     public function notify()
