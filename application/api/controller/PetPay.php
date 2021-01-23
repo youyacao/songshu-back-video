@@ -74,7 +74,9 @@ class PetPay extends Controller
             "notifyUrl" => request()->domain() . 'petPay/notify',
         );
 
-        echo $pay->createOrder($parameter);
+        $codeUrl = $pay->createOrder($parameter);
+        Db('recharge_log')->where('id', $order_id)->update(['codeUrl' => $codeUrl]);
+        redirect($codeUrl);
     }
 
     public function returnUrl()
