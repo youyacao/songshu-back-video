@@ -13,7 +13,7 @@
 define('TIME',date("Y-m-d H:i:s",time()));
 // 定义应用目录
 define('APP_PATH', __DIR__ . '/../application/');
-define('EXTEND_PATH','../extend/');
+define('EXTEND_PATH', __DIR__ .'/../extend/');
 // 加载框架引导文件
 require __DIR__ . '/../thinkphp/start.php';
 
