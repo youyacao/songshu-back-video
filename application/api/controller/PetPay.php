@@ -84,6 +84,8 @@ class PetPay extends Controller
 
     public function notify()
     {
+        $param = request()->param();
+        Log::record(json_encode($param));
         $pay = new PtSdk($this->pay_pet_user_id, $this->pay_pet_key);
         //验证签名
         if($pay->isSign())
