@@ -76,7 +76,8 @@ class PetPay extends Controller
 
         $codeUrl = $pay->createOrder($parameter);
         Db('recharge_log')->where('id', $order_id)->update(['codeUrl' => $codeUrl]);
-        $this->redirect($codeUrl);
+
+        header("location:$codeUrl");
     }
 
     public function returnUrl()
