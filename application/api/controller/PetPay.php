@@ -34,7 +34,7 @@ class PetPay extends Controller
 
     public function get(){
         $amount = request()->param('amount');
-        $payType = request()->param('payType');
+        $payType = request()->param('payType', 'wxpay');
 
         if (empty($amount)){
             return error("金额不能为空，请重试！");
