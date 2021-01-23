@@ -71,7 +71,8 @@ class PetPay extends Controller
             //金额
             "price" => $amount,
             "returnUrl" => request()->domain() . 'petPay/return',
-            "notifyUrl" => request()->domain() . 'petPay/notify'
+            "notifyUrl" => request()->domain() . 'petPay/notify',
+            "isHtml" => 3
         );
 
         echo $pay->createOrder($parameter);
