@@ -99,33 +99,23 @@ class PetPay extends Controller
                     $order_id = (string)$param['payId'];
                     $price = (float)$param['price'];
                     $reallyPrice = (float)$param['reallyPrice'];
-                    if (round($price,2) != round($reallyPrice, 2)) {
+                    if (intval($price) != intval($reallyPrice)) {
                         Db('recharge_log')->where('id', $order_id)->update([
                             'status'    => 2,
                             'payTime'   => date('Y-m-d H:i:s'),
                             'remark'    => "支付金额不对,实际支付{$reallyPrice}"
                         ]);
-                        exit(json_encode([
-                            'code'  => 'fail',
-                            'message'   => '支付金额不对'
-                        ]));
+                        exit('fail');
                     }
                     $order_info = Db('recharge_log')->where('id', $order_id)->find();
                     if ($order_info['status'] == '1') {
-                        exit(json_encode([
-                            'code'  => 'success',
-                            'message'   => '已经充值完成'
-                        ]));
+                        echo 'success';die;
                     }
                     Db('recharge_log')->where('id', $order_id)->update([
-                        'status'    => 2,
+                        'status'    => 1,
                         'payTime'   => date('Y-m-d H:i:s'),
-                        'remark'    => '支付失败'
+                        'remark'    => "支付完成，实际支付{$reallyPrice}"
                     ]);
-                    exit(json_encode([
-                        'code'  => 'fail',
-                        'message'   => '失败'
-                    ]));
                     //----------业务逻辑结束---------------
                     //告诉服务器已经收到通知
                     echo 'success';die;
