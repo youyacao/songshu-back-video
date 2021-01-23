@@ -32,7 +32,7 @@ if (!function_exists('paySign')) {
 if (!function_exists('getPayConfig')) {
     function getPayConfig()
     {
-        return Db("config")->whereIn('name',['pay_memberid','pay_key','pay_submit_url', 'gold_rate'])->column('value', 'name');
+        return Db("config")->whereIn('name',['pay_memberid','pay_key','pay_submit_url', 'gold_rate', 'pay_pet_key', 'pay_pet_user_id'])->column('value', 'name');
     }
 }
 

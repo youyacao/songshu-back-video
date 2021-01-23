@@ -27,6 +27,10 @@ Route::any('codepay/integral','api/codePay/integral');
 Route::any('codepay/notify','api/codePay/notify');
 Route::any('codepay/notifyIntegral','api/codePay/notifyIntegral');
 
+Route::any('petPay/get','api/petPay/get');
+Route::any('petPay/return','api/petPay/returnUrl');
+Route::any('petPay/notify','api/petPay/notify');
+
 Route::controller('user','api/user');
 
 Route::controller('skr_comment','api/skrComment');
