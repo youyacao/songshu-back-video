@@ -96,8 +96,6 @@ class PetPay extends Controller
                 if ($pay->checkOrderState()){
                     //签名验证成功,订单验证成功
                     //---------开始业务逻辑----------------
-                    $param = request()->param();
-                    Log::record(json_encode($param));
                     $order_id = (string)$param['payId'];
                     $price = (float)$param['price'];
                     $reallyPrice = (float)$param['reallyPrice'];
