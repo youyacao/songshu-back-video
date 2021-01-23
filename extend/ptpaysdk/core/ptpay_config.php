@@ -13,7 +13,7 @@ $ptpay_config['payfile'] = 'http://'.$_SERVER['HTTP_HOST'].'/payPage/pay.php?ord
 //微信用户信息获取的地址
 $ptpay_config['weChat_userInfo_returnUrl']='';
 //是否返回页面,1是返回HTML,0是JSON数据
-$ptpay_config['isHtml']='0';
+$ptpay_config['isHtml']='1';
 //访问模式,根据自己的服务器是否支持ssl访问，若支持请选择https；若不支持请选择http
 $ptpay_config['transport'] = 'https://';
 //派特支付的支付apiurl
