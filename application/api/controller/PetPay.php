@@ -20,6 +20,7 @@ class PetPay extends Controller
 
     protected $pay_pet_user_id = '';
     protected $pay_pet_key = '';
+    protected $gold_rate = 1;
 
     public function _initialize()
     {
@@ -29,6 +30,9 @@ class PetPay extends Controller
         $this->pay_pet_key = $payConfig['pay_pet_key'];
         if (empty($this->pay_pet_user_id) || empty($this->pay_pet_key)) {
             return error('秘钥不能为空');
+        }
+        if (!empty($payConfig['gold_rate'])) {
+            $this->gold_rate = $payConfig['gold_rate'];
         }
     }
 
@@ -116,6 +120,8 @@ class PetPay extends Controller
                         'payTime'   => date('Y-m-d H:i:s'),
                         'remark'    => "支付完成，实际支付{$reallyPrice}"
                     ]);
+                    $money = intval($price * $this->gold_rate);
+                    Db('user')->where('id', $order_info['uid'])->setInc('money', $money);
                     //----------业务逻辑结束---------------
                     //告诉服务器已经收到通知
                     echo 'success';die;
