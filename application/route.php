@@ -26,6 +26,7 @@ Route::any('codepay/index','api/codePay/index');
 Route::any('codepay/integral','api/codePay/integral');
 Route::any('codepay/notify','api/codePay/notify');
 Route::any('codepay/notifyIntegral','api/codePay/notifyIntegral');
+Route::any('cipher/receive','api/cipher/receive');
 
 Route::any('petPay/get','api/petPay/get');
 Route::any('petPay/return','api/petPay/returnUrl');
