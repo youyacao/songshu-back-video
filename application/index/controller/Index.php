@@ -28,8 +28,17 @@ class Index
 {
     public function index()
     {
-        return '（2021年1月1日）各位大哥，一直没有时间来做这一块，哎，不仅要干工作，还要做公司的事情，我们也是很难啊，个个身兼多职，不要太苛刻拉，说实话，这个页面应该做成一个下载页面什么的~你说我说的对不，好吧，暂行这样空着，等着我们做一个漂亮的APP下载页面，也是个不错的选择呢！</br>好啦，我们这里放几个地址，<p>
+        return '（2021年9月24日）嗯~本部分内容还是未来得及更新，最近我们联合涂图推出了全网独家的拆分的美颜剪辑服务，一项美颜/剪辑最低的只要1500元/年，还不赶紧来看看，点击查看<a href="https://songshu.youyacao.com/meiyan.html" target="_blank">优雅草联合涂图推出美颜剪辑拆分sdk服务</a><p>
     <a href="https://songshu.youyacao.com/video.html" target="_blank">YYC松鼠短视频系统</a>
+</p>
+
+
+<p>
+    <a href="https://songshu.youyacao.com/bg.html" target="_blank">博观报考CRM系统</a>
+</p>
+
+<p>
+    <a href="https://songshu.youyacao.com/q.html" target="_blank">YYC蜻蜓Q系统</a>
 </p>
 <p>
     <a href="https://songshu.youyacao.com/qingting.html" target="_blank">YYC蜻蜓S系统</a>
