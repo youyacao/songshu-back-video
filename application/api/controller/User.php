@@ -145,12 +145,13 @@ class User extends Controller
                 $username = input("username");//用户名
                 $password = input("password");//密码
                 $vcode = input("vcode");//验证码
-                //验证验证码
+                /*验证验证码
                 $captcha = new Captcha();
                 
                 if(!$captcha->check($vcode)){
                     return error("验证码错误");
                 }
+                */
                 
                 $user = Db("user")->where(['name|mail|phone' => $username])->find();
                 if (!$user) {
